@@ -1,0 +1,6 @@
+main: io.github.futurecore.Main
+version: 1.7.0
+name: FutureCore
+author: DelawareX
+depend: [Gohan,DBFuture, Multiverse-Core,WorldGuard, WorldEdit]
+

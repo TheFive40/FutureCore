@@ -1,0 +1,9 @@
+<component name="ArtifactManager">
+  <artifact type="jar" name="FutureCore:jar">
+    <output-path>$PROJECT_DIR$/out/artifacts/FutureCore_jar</output-path>
+    <root id="archive" name="FutureCore.jar">
+      <element id="file-copy" path="$PROJECT_DIR$/src/main/resources/plugin.yml" />
+      <element id="module-output" name="FutureCore" />
+    </root>
+  </artifact>
+</component>
