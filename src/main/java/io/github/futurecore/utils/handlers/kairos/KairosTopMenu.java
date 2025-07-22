@@ -10,7 +10,7 @@ public class KairosTopMenu {
             .id("kairosTop")
             .provider(new KairosTopProvider())
             .size(6, 9)
-            .title( ChatColor.DARK_PURPLE + "Top de Kairos")
+            .title( ChatColor.YELLOW + "Top Zenkais")
             .build();
 
     public static void open( Player player) {

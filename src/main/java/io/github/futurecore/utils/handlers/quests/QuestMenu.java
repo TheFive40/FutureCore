@@ -1,9 +1,6 @@
 package io.github.futurecore.utils.handlers.quests;
-
 import fr.minuskube.inv.SmartInventory;
 import io.github.futurecore.utils.CC;
-import io.github.futurecore.utils.handlers.kairos.KairosTopProvider;
-import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 
 public class QuestMenu {

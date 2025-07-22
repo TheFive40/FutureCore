@@ -4,6 +4,7 @@ import io.github.futurecore.utils.CC;
 import io.github.futurecore.utils.commands.BaseCommand;
 import io.github.futurecore.utils.commands.Command;
 import io.github.futurecore.utils.commands.CommandArgs;
+import org.bukkit.ChatColor;
 import org.bukkit.Sound;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
@@ -26,72 +27,76 @@ public class CmdItemUsage extends BaseCommand {
         } catch (NumberFormatException exception) {
             command.getSender ( ).sendMessage ( CC.translate ( "&cUtiliza el formato númerico" ) );
         }
+
         NbtHandler nbtHandler = new NbtHandler ( command.getPlayer ( ).getItemInHand ( ) );
         nbtHandler.setInteger ( "usages", maxUses );
         nbtHandler.setInteger ( "maxUses", maxUses );
-        command.getPlayer ().setItemInHand ( nbtHandler.getItemStack () );
+        ItemStack handItem = nbtHandler.getItemStack ( );
+        ItemMeta meta = handItem.getItemMeta ( );
+        List<String> lore;
+        lore = meta.hasLore ( ) ? meta.getLore ( ) : new ArrayList<> ( );
+        lore.add ( CC.translate ( "&aUsages: &2" + maxUses + "/" + maxUses ) );
+        meta.setLore ( lore );
+        handItem.setItemMeta ( meta );
+        command.getPlayer ( ).setItemInHand ( handItem );
         command.getSender ( ).sendMessage ( CC.translate ( "&aUsos máximos del item: &e" + maxUses + " &aregistrados correctamente" ) );
     }
 
     public static boolean hasPermanent ( ItemStack item ) throws Exception {
-        if (item == null ) return false;
+        if (item == null) return false;
         NbtHandler nbtHandler = new NbtHandler ( item );
         return nbtHandler.getInteger ( "usages" ) <= -10;
     }
 
-    public static ItemStack hasUses(ItemStack itemStack, Player player) throws Exception {
+    public static ItemStack hasUses ( ItemStack itemStack, Player player ) throws Exception {
         if (itemStack == null) return null;
 
-        NbtHandler nbtHandler = new NbtHandler(itemStack);
-        int uses = nbtHandler.getInteger("usages");
-        int maxUses = nbtHandler.getInteger("maxUses");
+        ItemMeta itemMeta = itemStack.getItemMeta ( );
+        if (itemMeta == null || !itemMeta.hasLore ( ) || itemMeta.getLore ( ) == null) return itemStack;
 
-        uses -= 1;
+        List<String> lore = new ArrayList<> ( itemMeta.getLore ( ) );
+        String usageLinePrefix = "§aUsages:";
 
-        if (uses > 0 || maxUses <= 0) {
-            if (maxUses > 0) {
-                nbtHandler.setInteger("usages", uses);
-            }
+        int uses = -1;
+        int maxUses = -1;
 
-            itemStack = nbtHandler.getItemStack();
+        for (int i = 0; i < lore.size ( ); i++) {
+            String line = lore.get ( i );
+            if (line.startsWith ( usageLinePrefix )) {
+                String[] parts = ChatColor.stripColor ( line ).split ( "Usages:" )[1].trim ( ).split ( "/" );
+                if (parts.length == 2) {
+                    try {
+                        uses = Integer.parseInt ( parts[0].trim ( ) );
+                        maxUses = Integer.parseInt ( parts[1].trim ( ) );
+                        uses -= 1;
+                        if (uses < 0) uses = 0;
 
-            if (maxUses > 0) {
-                double percentage = (double) uses / maxUses;
-                String color = percentage <= 0.25 ? "&c" : percentage <= 0.5 ? "&e" : "&2";
+                        double percentage = (double) uses / maxUses;
+                        String color = percentage <= 0.25 ? "&c" : percentage <= 0.5 ? "&e" : "&2";
 
-                ItemMeta itemMeta = itemStack.getItemMeta();
-                List<String> lore = (itemMeta.hasLore() && itemMeta.getLore() != null)
-                        ? new ArrayList<>(itemMeta.getLore())
-                        : new ArrayList<>();
+                        String usageLine = usageLinePrefix + " " + color + uses + "/" + maxUses;
+                        lore.set ( i, CC.translate ( usageLine ) );
 
-                String usageLinePrefix = "§8➤ §aUsages:";
-                String usageLine = usageLinePrefix + " " + color + uses + "/" + maxUses;
+                        itemMeta.setLore ( lore );
+                        itemStack.setItemMeta ( itemMeta );
 
-                boolean found = false;
-                for (int i = 0; i < lore.size(); i++) {
-                    if (lore.get(i).startsWith(usageLinePrefix)) {
-                        lore.set(i, CC.translate(usageLine));
-                        found = true;
-                        break;
+                        if (uses == 0 && maxUses > 0) {
+                            player.playSound ( player.getLocation ( ), Sound.ANVIL_BREAK, 1.0f, 1.0f );
+                            player.sendMessage ( CC.translate ( "&cHas alcanzado la cantidad máxima de usos" ) );
+                            return null;
+                        }
+
+                        return itemStack;
+
+                    } catch (NumberFormatException ignored) {
                     }
                 }
-
-                if (!found) {
-                    lore.add(CC.translate("&f "));
-                    lore.add(CC.translate(usageLine));
-                }
-
-                itemMeta.setLore(lore);
-                itemStack.setItemMeta(itemMeta);
+                break;
             }
-
-            return itemStack;
         }
-        player.playSound(player.getLocation(), Sound.ANVIL_BREAK, 1.0f, 1.0f);
-        player.sendMessage(CC.translate("&cHaz alcanzado la cantidad máxima de usos"));
-        return null;
-    }
 
+        return itemStack;
+    }
 
 
 }

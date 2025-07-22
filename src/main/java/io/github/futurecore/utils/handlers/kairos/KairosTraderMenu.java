@@ -19,15 +19,15 @@ public class KairosTraderMenu implements InventoryProvider {
                 .id("kairos_trader")
                 .provider(new KairosTraderMenu())
                 .size(3, 9)
-                .title("§d☼ Intercambiador ☼")
+                .title("§6☼ Intercambiador ☼")
                 .build();
     }
 
     @Override
     public void init(Player player, InventoryContents contents) {
-        addKairosButton(contents, player, 1, 2, 5.0);
-        addKairosButton(contents, player, 1, 4, 10.0);
-        addKairosButton(contents, player, 1, 6, 20.0);
+        addKairosButton(contents, player, 1, 2, 10.0);
+        addKairosButton(contents, player, 1, 4, 50.0);
+        addKairosButton(contents, player, 1, 6, 100.0);
 
         ItemStack border = new ItemStack(Material.STAINED_GLASS_PANE, 1, (short) 10);
 
@@ -49,7 +49,7 @@ public class KairosTraderMenu implements InventoryProvider {
         contents.set(row, col, ClickableItem.of(kairosItem, e -> {
             PKairos data = new PKairos(player.getUniqueId());
             if (data.getAmount() < amount) {
-                player.sendMessage("§cNo tienes suficientes Kairos para este intercambio.");
+                player.sendMessage("§cNo tienes suficientes Zenkais para este intercambio.");
                 return;
             }
 
@@ -59,7 +59,7 @@ public class KairosTraderMenu implements InventoryProvider {
             nbtPhandler.addCompound ( "Kairos" );
             player.getInventory().addItem(nbtPhandler.getItemStack ());
             player.updateInventory ();
-            player.sendMessage("§aIntercambiaste §e" + amount + " Kairos §apor ítems físicos.");
+            player.sendMessage("§aIntercambiaste §e" + amount + " Zenkais §apor ítems físicos.");
             player.playSound(player.getLocation(), Sound.LEVEL_UP, 1f, 1f);
         }));
     }

@@ -25,7 +25,7 @@ public class KairosShopManager {
                 .provider ( new KairosShopMenu ( items ) )
                 .type ( InventoryType.CHEST )
                 .size ( 6, 9 )
-                .title ( CC.translate ( "&d❃ &5Tienda de Kairos &d❃" ) )
+                .title ( CC.translate ( "&6❃ &eTienda de Zenkais &6❃" ) )
                 .build ( )
                 .open ( player );
 

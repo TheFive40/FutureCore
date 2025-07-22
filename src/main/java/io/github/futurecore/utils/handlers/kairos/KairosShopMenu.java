@@ -6,6 +6,7 @@ import fr.minuskube.inv.content.InventoryContents;
 import fr.minuskube.inv.content.InventoryProvider;
 import fr.minuskube.inv.content.Pagination;
 import fr.minuskube.inv.content.SlotIterator;
+import io.github.futurecore.Main;
 import io.github.futurecore.utils.CC;
 import io.github.futurecore.utils.ItemSerializationUtil;
 import io.github.futurecore.utils.data.KairosData.PKairos;
@@ -16,15 +17,17 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.ClickType;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.delaware.tools.CustomItems.CustomItems;
 import org.delaware.tools.NbtHandler.NbtHandler;
 
+import java.io.File;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.List;
 
 public class KairosShopMenu implements InventoryProvider {
 
-    private final List<ItemStack> items;
+    private static List<ItemStack> items;
 
     public KairosShopMenu ( List<ItemStack> items ) {
         this.items = items;
@@ -35,7 +38,7 @@ public class KairosShopMenu implements InventoryProvider {
                 .id ( "kairos_shop" )
                 .provider ( new KairosShopMenu ( items ) )
                 .size ( 6, 9 )
-                .title ( ChatColor.DARK_PURPLE + " » Tienda Kairos" )
+                .title ( ChatColor.GOLD + " » Tienda Zenkais" )
                 .build ( );
     }
 
@@ -57,7 +60,7 @@ public class KairosShopMenu implements InventoryProvider {
                     }
 
                     if (pKairos.getAmount ( ) < price) {
-                        player.sendMessage ( CC.translate ( "&c¡No tienes suficientes Kairos! Necesitas &4" + format ( price ) ) );
+                        player.sendMessage ( CC.translate ( "&c¡No tienes suficientes Zenkais! Necesitas &4" + format ( price ) ) );
                         return;
                     }
 
@@ -73,18 +76,10 @@ public class KairosShopMenu implements InventoryProvider {
                                     String[] parts = raw.split ( ": " )[1].split ( "/" );
                                     int usages = Integer.parseInt ( parts[0] );
                                     int maxUses = Integer.parseInt ( parts[1] );
-                                    meta = cloned.getItemMeta ( );
-                                    if (meta != null && meta.hasLore ( )) {
-                                        List<String> lore = new ArrayList<> ( meta.getLore ( ) );
-                                        if (lore.size ( ) >= 3) {
-                                            lore = lore.subList ( 0, lore.size ( ) - 3 );
-                                            meta.setLore ( lore );
-                                            cloned.setItemMeta ( meta );
-                                        }
-                                    }
                                     NbtHandler nbtHandler = new NbtHandler ( cloned );
                                     nbtHandler.setInteger ( "usages", usages );
                                     nbtHandler.setInteger ( "maxUses", maxUses );
+                                    nbtHandler.setString ( "CUSTOMID", "kairosITEM" );
                                     cloned = nbtHandler.getItemStack ( );
                                     break;
                                 }
@@ -92,15 +87,16 @@ public class KairosShopMenu implements InventoryProvider {
                         }
                     }
                     player.getInventory ( ).addItem ( cloned );
-                    player.sendMessage ( CC.translate ( "&a¡Has comprado el ítem por &2" + format ( price ) + " &aKairos!" ) );
+                    player.sendMessage ( CC.translate ( "&a¡Has comprado el ítem por &2" + format ( price ) + " &aZenkais!" ) );
                 } else if (event.getClick ( ) == ClickType.RIGHT) {
                     if (hasPermissionToRemove ( player )) {
                         items.remove ( item );
                         KairosShopManager.items.remove ( item );
                         player.sendMessage ( ChatColor.GREEN + "¡Has eliminado el ítem de la tienda!" );
-
                         SmartInventory inventory = getInventory ( items );
                         inventory.open ( player );
+                        File file = new File ( Main.instance.getDataFolder ( ), "FutureCore/kairos/player/shopitems.txt" );
+                        ItemSerializationUtil.saveItemsToFile ( file, KairosShopManager.items );
                     } else {
                         player.sendMessage ( ChatColor.RED + "No tienes permisos para eliminar este ítem." );
                     }
@@ -118,10 +114,10 @@ public class KairosShopMenu implements InventoryProvider {
                 .blacklist ( 4, 5 )
                 .blacklist ( 4, 6 )
                 .blacklist ( 4, 7 ) );
-        contents.set(4, 2, ClickableItem.of( new ItemBuilder ( Material.ARROW ).name ( ChatColor.YELLOW + "Página anterior" ).build ( ),
-                e -> contents.inventory ().open(player, pagination.previous().getPage())));
-        contents.set(4, 6, ClickableItem.of(new ItemBuilder ( Material.ARROW ).name ( ChatColor.YELLOW + "Página siguiente" ).build ( ),
-                e -> contents.inventory ().open(player, pagination.next().getPage())));
+        contents.set ( 4, 2, ClickableItem.of ( new ItemBuilder ( Material.ARROW ).name ( ChatColor.YELLOW + "Página anterior" ).build ( ),
+                e -> contents.inventory ( ).open ( player, pagination.previous ( ).getPage ( ) ) ) );
+        contents.set ( 4, 6, ClickableItem.of ( new ItemBuilder ( Material.ARROW ).name ( ChatColor.YELLOW + "Página siguiente" ).build ( ),
+                e -> contents.inventory ( ).open ( player, pagination.next ( ).getPage ( ) ) ) );
 
 
         contents.fillBorders ( ClickableItem.empty ( new ItemStack ( Material.STAINED_GLASS_PANE, 1, (short) 10 ) ) );

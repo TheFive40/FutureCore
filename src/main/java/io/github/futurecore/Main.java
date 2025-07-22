@@ -16,10 +16,7 @@ import net.minecraft.util.io.netty.util.internal.ConcurrentSet;
 import noppes.npcs.api.IWorld;
 import noppes.npcs.api.entity.ICustomNpc;
 import noppes.npcs.scripted.NpcAPI;
-import org.bukkit.Bukkit;
-import org.bukkit.Location;
-import org.bukkit.Sound;
-import org.bukkit.World;
+import org.bukkit.*;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.delaware.tools.CC;
@@ -29,6 +26,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Random;
 
+import static io.github.futurecore.events.customitems.FruitOfPowerEvent.fruitOfPowerTask;
 import static io.github.futurecore.utils.data.KairosDataHandler.KairosDataHandler.itemsKairos;
 import static io.github.futurecore.utils.data.KairosDataHandler.KairosDataHandler.pKairos;
 import static net.minecraft.entity.boss.BossStatus.bossName;
@@ -40,6 +38,8 @@ public class Main extends JavaPlugin {
     private final CommandFramework commandFramework = new CommandFramework ( this );
     private final ClassesRegistration classesRegistration = new ClassesRegistration ( );
     private ICustomNpc<?> boss;
+    public static File titlesFile = null;
+    public static File descFile = null;
 
     public CommandFramework getCommandFramework () {
         return commandFramework;
@@ -53,11 +53,14 @@ public class Main extends JavaPlugin {
 
     public void onEnable () {
         instance = this;
+        titlesFile = new File ( Main.instance.getDataFolder ( ), "questTitles.yml" );
+        descFile = new File ( Main.instance.getDataFolder ( ), "questDescriptions.yml" );
         luckPermsAPI = LuckPermsProvider.get ( );
         classesRegistration.loadCommands ( "io.github.futurecore.commands.player.cmdkairos" );
         classesRegistration.loadCommands ( "io.github.futurecore.commands.player.cmdUsages" );
         classesRegistration.loadCommands ( "io.github.futurecore.commands.player.cmdBosses" );
         classesRegistration.loadCommands ( "io.github.futurecore.commands.player.cmdcore" );
+        classesRegistration.loadCommands ( "io.github.futurecore.commands.player.cmdRaids" );
         classesRegistration.loadListeners ( "io.github.futurecore.events.bukkit" );
         classesRegistration.loadListeners ( "io.github.futurecore.events.customitems" );
         classesRegistration.loadListeners ( "io.github.futurecore.minigames" );
@@ -74,15 +77,18 @@ public class Main extends JavaPlugin {
                 return;
             }
         }
+        fruitOfPowerTask ( );
         BossStorage.loadNpcRarity ( this );
         BossStorage.loadNpcNames ( this );
         KairosShopManager.items = ItemSerializationUtil.loadItemsFromFile ( file );
         startHourlyTask ( );
-        startTwoHourlyTask ( );
+        startOneHourHearly ( );
         System.out.println ( "Plugin successfully enabled" );
         System.out.println ( "Version: 1.1.5 " );
         System.out.println ( "By DelawareX" );
+        LocationStorage.loadQuestData ( );
         KairosHandlerManager.startAutoSave ( this );
+        //startMusicTask();
     }
 
     @Override
@@ -91,6 +97,7 @@ public class Main extends JavaPlugin {
         KairosStorage.saveItemsMap ( this, itemsKairos );
         BossStorage.saveNpcNames ( this );
         BossStorage.saveNpcRarity ( this );
+        LocationStorage.saveQuestData ( );
         LocationStorage.saveNpcLocations ( this, npcLocations );
     }
 
@@ -103,22 +110,28 @@ public class Main extends JavaPlugin {
         }, 60 * 5 * 20, 60 * 60 * 20L );
     }
 
-    public void startTwoHourlyTask () {
+    public void startOneHourHearly () {
         getServer ( ).getScheduler ( ).runTaskTimer ( this, () -> {
             int idWorld = this.getServer ( ).getWorld ( "world" ).getEnvironment ( ).getId ( );
             IWorld world = NpcAPI.Instance ( ).getIWorld ( idWorld );
             World worldBukkit = Bukkit.getWorld ( "world" );
 
-            Location randomLocation = getRandomLocation ( worldBukkit, 0, 0, 200 );
             String npcName = getRandomNpcName ( );
             if (npcName == null) {
                 return;
             }
+
             Integer rarity = CmdBosses.npcRarity.get ( npcName );
             if (rarity == null) rarity = 100;
 
             if (Math.random ( ) * 100 > rarity) {
                 return;
+            }
+
+            Location randomLocation = getRandomLocation ( worldBukkit, 0, 0, 2500 );
+            Chunk chunk = randomLocation.getChunk ( );
+            if (!chunk.isLoaded ( )) {
+                chunk.load ( true );
             }
 
             boss = (ICustomNpc<?>) world.spawnClone (
@@ -129,6 +142,51 @@ public class Main extends JavaPlugin {
                     npcName
             );
 
+            if (boss == null) {
+                final Location retryLocation = randomLocation;
+                final int[] taskId = new int[1];
+
+                Integer finalRarity = rarity;
+                taskId[0] = Bukkit.getScheduler ( ).runTaskTimerAsynchronously ( this, () -> {
+                    Chunk asyncChunk = retryLocation.getChunk ( );
+                    if (!asyncChunk.isLoaded ( )) {
+                        asyncChunk.load ( true );
+                    }
+
+                    ICustomNpc<?> asyncBoss = (ICustomNpc<?>) world.spawnClone (
+                            retryLocation.getBlockX ( ),
+                            retryLocation.getBlockY ( ),
+                            retryLocation.getBlockZ ( ),
+                            1,
+                            npcName
+                    );
+
+                    if (asyncBoss != null) {
+                        Bukkit.getScheduler ( ).cancelTask ( taskId[0] );
+                        String coords = String.format ( "X: %d, Y: %d, Z: %d",
+                                retryLocation.getBlockX ( ),
+                                retryLocation.getBlockY ( ),
+                                retryLocation.getBlockZ ( )
+                        );
+
+                        if (finalRarity < 20) {
+                            Bukkit.broadcastMessage ( CC.translate ( "&c[Alerta Boss] &f¡Un boss legendario ha aparecido!&6 " + npcName + " &fen &b" + coords + "&f!" ) );
+                            for (Player player : Bukkit.getServer ( ).getOnlinePlayers ( )) {
+                                player.playSound ( player.getLocation ( ), Sound.WITHER_SPAWN, 1.0f, 1.0f );
+                            }
+                        } else {
+                            Bukkit.broadcastMessage ( CC.translate ( "&c[Alerta Boss] &f¡Ha aparecido un boss llamado &6" + npcName + " &fen &b" + coords + "&f!" ) );
+                            for (Player player : Bukkit.getServer ( ).getOnlinePlayers ( )) {
+                                player.playSound ( player.getLocation ( ), Sound.ENDERDRAGON_GROWL, 1.0f, 1.0f );
+                            }
+                        }
+                    }
+
+                }, 0L, 1L ).getTaskId ( );
+
+                return;
+            }
+
             String coords = String.format ( "X: %d, Y: %d, Z: %d",
                     randomLocation.getBlockX ( ),
                     randomLocation.getBlockY ( ),
@@ -137,16 +195,17 @@ public class Main extends JavaPlugin {
 
             if (rarity < 20) {
                 Bukkit.broadcastMessage ( CC.translate ( "&c[Alerta Boss] &f¡Un boss legendario ha aparecido!&6 " + npcName + " &fen &b" + coords + "&f!" ) );
-                for (Player player : this.getServer ( ).getOnlinePlayers ( )) {
+                for (Player player : Bukkit.getServer ( ).getOnlinePlayers ( )) {
                     player.playSound ( player.getLocation ( ), Sound.WITHER_SPAWN, 1.0f, 1.0f );
                 }
             } else {
                 Bukkit.broadcastMessage ( CC.translate ( "&c[Alerta Boss] &f¡Ha aparecido un boss llamado &6" + npcName + " &fen &b" + coords + "&f!" ) );
-                for (Player player : this.getServer ( ).getOnlinePlayers ( )) {
+                for (Player player : Bukkit.getServer ( ).getOnlinePlayers ( )) {
                     player.playSound ( player.getLocation ( ), Sound.ENDERDRAGON_GROWL, 1.0f, 1.0f );
                 }
             }
-        }, 60 * 5 * 20, 2 * 60 * 60 * 20L );
+
+        }, 60 * 2 * 20, 60 * 60 * 20L );
     }
 
 
@@ -162,11 +221,18 @@ public class Main extends JavaPlugin {
      * @return Una ubicación aleatoria
      */
     public static Location getRandomLocation ( World world, int centerX, int centerZ, int range ) {
-        int x = centerX + random.nextInt ( range * 2 ) - range;
-        int z = centerZ + random.nextInt ( range * 2 ) - range;
-        int y = world.getHighestBlockYAt ( x, z );
+        for (int attempts = 0; attempts < 20; attempts++) {
+            int x = centerX + random.nextInt ( range * 2 ) - range;
+            int z = centerZ + random.nextInt ( range * 2 ) - range;
+            int y = world.getHighestBlockYAt ( x, z );
+            Location loc = new Location ( world, x + 0.5, y, z + 0.5 );
 
-        return new Location ( world, x + 0.5, y, z + 0.5 );
+            Material blockType = world.getBlockAt ( loc.subtract ( 0, 1, 0 ) ).getType ( );
+            if (!blockType.isSolid ( ) || blockType == Material.WATER || blockType == Material.LAVA) continue;
+
+            return loc.add ( 0, 1, 0 );
+        }
+        return new Location ( world, centerX, world.getHighestBlockYAt ( centerX, centerZ ), centerZ );
     }
 
     public static String getRandomNpcName () {

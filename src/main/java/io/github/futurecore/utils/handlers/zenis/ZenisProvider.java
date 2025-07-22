@@ -1,4 +1,4 @@
-package io.github.futurecore.utils.handlers.kairos;
+package io.github.futurecore.utils.handlers.zenis;
 
 import fr.minuskube.inv.ClickableItem;
 import fr.minuskube.inv.content.InventoryContents;
@@ -21,7 +21,7 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 
-public class KairosTopProvider implements InventoryProvider {
+public class ZenisProvider implements InventoryProvider {
 
     private final int ITEMS_PER_PAGE = 25;
 

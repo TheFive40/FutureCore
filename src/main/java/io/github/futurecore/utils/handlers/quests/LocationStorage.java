@@ -6,17 +6,46 @@ import com.google.gson.reflect.TypeToken;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.World;
+import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.*;
 import java.lang.reflect.Type;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+
+import static io.github.futurecore.Main.descFile;
+import static io.github.futurecore.Main.titlesFile;
+import static io.github.futurecore.commands.player.cmdcore.CmdQuests.questDescriptions;
+import static io.github.futurecore.commands.player.cmdcore.CmdQuests.questTitles;
 import static io.github.futurecore.utils.handlers.kairos.KairosStorage.getFolder;
 
 public class LocationStorage {
     private static final Gson gson = new GsonBuilder ().setPrettyPrinting().create();
+    public static void saveQuestData() {
+        YamlConfiguration titlesConfig = new YamlConfiguration();
+        for (String id : questTitles.keySet()) {
+            titlesConfig.set(id, questTitles.get(id));
+        }
+        try {
+            titlesConfig.save(titlesFile);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        // Guardar descripciones
+        YamlConfiguration descConfig = new YamlConfiguration();
+        for (String id : questDescriptions.keySet()) {
+            descConfig.set(id, questDescriptions.get(id));
+        }
+        try {
+            descConfig.save(descFile);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
 
     public static void saveNpcLocations( JavaPlugin plugin, Map<String, Location> map) {
         File file = new File(getFolder(plugin), "npc_locations.json");
@@ -63,6 +92,23 @@ public class LocationStorage {
         }
 
         return result;
+    }
+    @SuppressWarnings("unchecked")
+    public static void loadQuestData() {
+        if (titlesFile.exists()) {
+            YamlConfiguration titlesConfig = YamlConfiguration.loadConfiguration(titlesFile);
+            for (String id : titlesConfig.getKeys(false)) {
+                questTitles.put(id, titlesConfig.getString(id));
+            }
+        }
+
+        if (descFile.exists()) {
+            YamlConfiguration descConfig = YamlConfiguration.loadConfiguration(descFile);
+            for (String id : descConfig.getKeys(false)) {
+                List<String> desc = descConfig.getStringList(id);
+                questDescriptions.put(id, desc);
+            }
+        }
     }
 
 }

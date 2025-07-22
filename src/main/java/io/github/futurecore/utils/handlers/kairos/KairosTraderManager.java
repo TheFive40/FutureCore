@@ -9,27 +9,27 @@ import java.util.Arrays;
 
 public class KairosTraderManager {
 
-    public static final int ID_KAIROS_1 = 4956;
-    public static final int ID_KAIROS_5 = 4963;
-    public static final int ID_KAIROS_20 = 4979;
+    public static final int ID_KAIROS_1 = 6175;
+    public static final int ID_KAIROS_5 = 6176;
+    public static final int ID_KAIROS_20 = 6174;
 
     public static ItemStack getKairosItem(double amount) {
-        ItemStack item = new ItemStack(Material.getMaterial((int) getKairosId(amount)));
+        ItemStack item = new ItemStack(Material.getMaterial( getKairosId(amount) ));
         ItemMeta meta = item.getItemMeta();
-        meta.setDisplayName("§e⛁ " + amount + " KAIROS");
+        meta.setDisplayName("§e⛁ " + amount + " ZENKAIS");
         meta.setLore(Arrays.asList(
                 "§7Click izquierdo para intercambiar",
-                "§7Convertir tus §eKairos virtuales",
-                "§7en Kairos físicos (ítems)."
+                "§7Convertir tus §eZenkais virtuales",
+                "§7en Zenkais físicos (ítems)."
         ));
         item.setItemMeta(meta);
         return item;
     }
 
     private static int getKairosId(double amount) {
-        if (amount == 10.0) return ID_KAIROS_1;
-        if (amount == 5.0) return ID_KAIROS_5;
-        if (amount == 20.0) return ID_KAIROS_20;
+        if (amount == 50.0) return ID_KAIROS_1;
+        if (amount == 10.0) return ID_KAIROS_5;
+        if (amount == 100.0) return ID_KAIROS_20;
         return 0;
     }
 

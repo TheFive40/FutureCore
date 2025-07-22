@@ -1,8 +1,7 @@
 package io.github.futurecore.utils;
+import JinRyuu.JRMCore.JRMCoreH;
 import com.gmail.filoghost.holograms.api.Hologram;
 import com.gmail.filoghost.holograms.api.HolographicDisplaysAPI;
-import io.github.facuu16.gohan.dbc.model.DbcPlayer;
-import io.github.facuu16.gohan.dbc.model.Stat;
 import io.github.futurecore.Main;
 import net.luckperms.api.LuckPerms;
 import net.luckperms.api.LuckPermsProvider;
@@ -62,14 +61,22 @@ public class General {
         Hologram hologram = HolographicDisplaysAPI.createHologram ( Main.instance, loc, org.delaware.tools.CC.translate ( text ) );
         Bukkit.getScheduler ( ).runTaskLater ( Main.instance, hologram::delete, 20L );
     }
-    public static int getSTAT ( Stat stat, Player entity ) {
-        DbcPlayer<EntityPlayerMP> jugador = new DbcPlayer<> ( entity.getUniqueId ( ) );
-        return jugador.stat ( stat );
+    public static int getSTAT ( String stat, Player entity ) {
+        return JRMCoreH.getInt ( toPlayerMP ( entity ) ,STATS_MAP.get ( stat.toUpperCase () ) );
     }
-
+    public static EntityPlayerMP toPlayerMP ( Player player ) {
+        return (EntityPlayerMP) NpcAPI.Instance ( ).getPlayer ( player.getName ( ) ).getDBCPlayer ( )
+                .getMCEntity ( );
+    }
     public static int getLVL ( Player player ) {
-        DbcPlayer<EntityPlayerMP> jugador = new DbcPlayer<> ( player.getUniqueId ( ) );
-        return jugador.level ( );
+        int str = JRMCoreH.getInt ( toPlayerMP ( player ), STR );
+        int dex = JRMCoreH.getInt ( toPlayerMP ( player ), DEX );
+        int con = JRMCoreH.getInt ( toPlayerMP ( player ), CON );
+        int wil = JRMCoreH.getInt ( toPlayerMP ( player ), WIL );
+        int mnd = JRMCoreH.getInt ( toPlayerMP ( player ), MND );
+        int spi = JRMCoreH.getInt ( toPlayerMP ( player ), SPI );
+        int lvl = (str + dex + con + wil + mnd + spi) / 5 - 11;
+        return lvl;
     }
 
     public static boolean hasStaffParent ( Player player ) {

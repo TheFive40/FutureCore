@@ -1,15 +1,19 @@
 package io.github.futurecore.events.bukkit;
 
+import com.earth2me.essentials.Essentials;
 import com.sk89q.worldguard.protection.regions.ProtectedRegion;
 import io.github.futurecore.Main;
 import io.github.futurecore.utils.RegionUtils;
 import io.github.futurecore.utils.data.KairosData.PKairos;
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
+import org.bukkit.event.player.PlayerRespawnEvent;
+
 import java.util.HashMap;
 import java.util.UUID;
 
@@ -29,12 +33,12 @@ public class PlayerDeath implements Listener {
         RegionUtils regionUtils = new RegionUtils ( );
         ProtectedRegion protectedRegion = regionUtils.getRegionAtLocation ( event.getEntity ( ).getLocation ( ) );
         if (protectedRegion == null) return;
-        Location loc = event.getEntity().getLocation();
-        if (!(RegionUtils.isLocationInRegion(loc, "dungeon_1")
-                || RegionUtils.isLocationInRegion(loc, "dungeon_2")
-                || RegionUtils.isLocationInRegion(loc, "dungeon_3")
-                || RegionUtils.isLocationInRegion(loc, "dungeon_4")
-                || RegionUtils.isLocationInRegion(loc, "dungeon_5"))) return;
+        Location loc = event.getEntity ( ).getLocation ( );
+        if (!(RegionUtils.isLocationInRegion ( loc, "dungeon_1" )
+                || RegionUtils.isLocationInRegion ( loc, "dungeon_2" )
+                || RegionUtils.isLocationInRegion ( loc, "dungeon_3" )
+                || RegionUtils.isLocationInRegion ( loc, "dungeon_4" )
+                || RegionUtils.isLocationInRegion ( loc, "dungeon_5" ))) return;
 
         if (damageByPlayer.containsKey ( event.getEntity ( ).getUniqueId ( ) )) {
             UUID playerUUID = damageByPlayer.get ( event.getEntity ( ).getUniqueId ( ) );
@@ -54,4 +58,22 @@ public class PlayerDeath implements Listener {
         }
     }
 
+    @EventHandler
+    public void onRespawn ( PlayerRespawnEvent event ) {
+        Player player = event.getPlayer ( );
+
+        Essentials ess = (Essentials) Bukkit.getPluginManager ( ).getPlugin ( "Essentials" );
+        if (ess != null) {
+            try {
+                Location warp = ess.getWarps ( ).getWarp ( "enma" );
+                event.setRespawnLocation ( warp );
+                return;
+            } catch (Exception ignored) {
+            }
+
+            Bukkit.getScheduler ( ).runTask ( Main.instance,
+                    () -> player.performCommand ( "warp enma" ) );
+        }
+
+    }
 }

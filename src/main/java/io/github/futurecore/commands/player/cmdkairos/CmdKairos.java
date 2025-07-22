@@ -27,7 +27,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class CmdKairos extends BaseCommand {
-    @Command(name = "kairos", inGameOnly = false)
+    @Command(name = "zenkai", aliases = {"zenkais", "zenkai"}, inGameOnly = false)
     @Override
     public void onCommand ( CommandArgs command ) throws IOException {
         if (command.getArgs ( ).length == 0) {
@@ -44,7 +44,7 @@ public class CmdKairos extends BaseCommand {
         switch (aliases.toLowerCase ( )) {
             case "balance":
                 if (command.getSender ( ) instanceof ConsoleCommandSender) {
-                    command.getSender ( ).sendMessage ( CC.translate ( "&dBalance: &5Infinito" ) );
+                    command.getSender ( ).sendMessage ( CC.translate ( "&eBalance: &6Infinito" ) );
                     return;
                 }
                 if (pKairos == null) return;
@@ -77,7 +77,12 @@ public class CmdKairos extends BaseCommand {
                 break;
 
             case "shop":
-                KairosShopManager.openShop ( command.getPlayer ( ) );
+                if (command.getSender ( ) instanceof Player) {
+                    KairosShopManager.openShop ( command.getPlayer ( ) );
+                    return;
+                }
+                Player jugador = Main.instance.getServer ( ).getPlayer ( command.getArgs ( 1 ) );
+                KairosShopManager.openShop ( jugador );
                 break;
 
             case "top":
@@ -85,7 +90,12 @@ public class CmdKairos extends BaseCommand {
                 break;
 
             case "trader":
-                KairosTraderManager.openTrader ( command.getPlayer ( ) );
+                if (command.getSender ( ) instanceof Player) {
+                    KairosTraderManager.openTrader ( command.getPlayer ( ) );
+                    return;
+                }
+                jugador = Main.instance.getServer ( ).getPlayer ( command.getArgs ( 1 ) );
+                KairosTraderManager.openTrader ( jugador );
                 break;
 
             case "additem":
@@ -107,7 +117,7 @@ public class CmdKairos extends BaseCommand {
                     ItemMeta meta = handItem.getItemMeta ( );
                     List<String> lore = meta.hasLore ( ) ? new ArrayList<> ( meta.getLore ( ) ) : new ArrayList<> ( );
                     lore.add ( CC.translate ( "&f " ) );
-                    lore.add ( ChatColor.GREEN + "Precio: " + ChatColor.DARK_AQUA + "$" + formattedPrice + " KAIROS" );
+                    lore.add ( ChatColor.GREEN + "Precio: " + ChatColor.GOLD + "$" + formattedPrice + " Zenkais" );
                     meta.setLore ( lore );
                     handItem.setItemMeta ( meta );
                     KairosShopManager.addItem ( handItem );
@@ -121,23 +131,15 @@ public class CmdKairos extends BaseCommand {
                     }
 
                     NbtHandler nbtHandler = new NbtHandler ( handItem );
-                    int usages = nbtHandler.getInteger ( "usages" );
                     int maxUses = nbtHandler.getInteger ( "maxUses" );
-
-                    meta = handItem.getItemMeta ( );
-                    lore = meta.hasLore ( ) ? meta.getLore ( ) : new ArrayList<> ( );
-                    lore.add ( CC.translate ( "&aUsages: &2" + usages + "/" + maxUses ) );
-                    meta.setLore ( lore );
-                    handItem.setItemMeta ( meta );
-
                     KairosShopManager.items.add ( handItem );
                     ItemSerializationUtil.saveItemsToFile ( file, KairosShopManager.items );
 
-                    player.sendMessage ( ChatColor.GREEN + "Ítem agregado a la tienda con precio $" + formattedPrice + " KAIROS." );
+                    player.sendMessage ( ChatColor.GREEN + "Ítem agregado a la tienda con precio $" + formattedPrice + " ZENKAIS." );
                 } catch (NumberFormatException e) {
                     player.sendMessage ( ChatColor.RED + "Precio inválido." );
                 }
-                player.sendMessage ( ChatColor.RED + "Uso: /kairos addItem <precio>" );
+                player.sendMessage ( ChatColor.RED + "Uso: /zenkais addItem <precio>" );
                 break;
 
             case "item":
@@ -156,7 +158,7 @@ public class CmdKairos extends BaseCommand {
                 lore.add ( CC.translate ( "&7Aceptada por comerciantes de todo el reino." ) );
                 lore.add ( CC.translate ( "&7Puede canjearse por objetos, armas y recursos." ) );
                 lore.add ( CC.translate ( "&8No se puede fabricar ni duplicar." ) );
-                meta.setDisplayName ( CC.translate ( "&E ⛃ " + amount + " KAIROS" ) );
+                meta.setDisplayName ( CC.translate ( "&E ⛃ " + amount + " ZENKAIS" ) );
                 meta.setLore ( lore );
                 item.setItemMeta ( meta );
 
@@ -165,7 +167,7 @@ public class CmdKairos extends BaseCommand {
                 nbtHandler.addCompound ( "Kairos" );
                 player.setItemInHand ( nbtHandler.getItemStack ( ) );
 
-                player.sendMessage ( CC.translate ( "&aMoneda del Kairos de &2" + amount + " &aregistrada correctamente" ) );
+                player.sendMessage ( CC.translate ( "&aMoneda del Zenkais de &2" + amount + " &aregistrada correctamente" ) );
                 new ItemKairos ( meta.getDisplayName ( ), meta.getLore ( ), item.getTypeId ( ), (int) amount );
                 break;
 
@@ -188,24 +190,26 @@ public class CmdKairos extends BaseCommand {
                 nbtHandler.addCompound ( "Kairos" );
                 player.setItemInHand ( nbtHandler.getItemStack ( ) );
 
-                player.sendMessage ( CC.translate ( "&aMoneda del Kairos de &2" + amount + " &agiveada correctamente" ) );
+                player.sendMessage ( CC.translate ( "&aMoneda del Zenkais de &2" + amount + " &agiveada correctamente" ) );
                 break;
 
             case "give":
-                if (!command.getPlayer ( ).hasPermission ( "kairos.give" )) {
-                    command.getPlayer ( ).sendMessage ( ChatColor.RED + "No tienes permiso para usar este comando." );
-                    return;
+                if (command.getSender ( ) instanceof Player) {
+                    if (!command.getPlayer ( ).hasPermission ( "kairos.give" )) {
+                        command.getPlayer ( ).sendMessage ( ChatColor.RED + "No tienes permiso para usar este comando." );
+                        return;
+                    }
                 }
-                if (pKairos == null || command.getArgs ( ).length < 2) return;
+                if (command.getArgs ( ).length < 2) return;
                 try {
                     double amountGive = Double.parseDouble ( command.getArgs ( 1 ) );
                     String playerName = command.getArgs ( 2 );
-                    player = command.getPlayer ( ).getServer ( ).getPlayer ( playerName );
+                    player = command.getSender ( ).getServer ( ).getPlayer ( playerName );
                     pKairos = new PKairos ( player.getUniqueId ( ) );
                     pKairos.pay ( amountGive );
-                    command.getPlayer ( ).sendMessage ( CC.translate ( "&aSe han añadido &2" + amountGive + " &aKairos a tu cuenta." ) );
+                    command.getSender ( ).sendMessage ( CC.translate ( "&aSe han añadido &2" + amountGive + " &aZenkais a tu cuenta." ) );
                 } catch (NumberFormatException e) {
-                    command.getPlayer ( ).sendMessage ( ChatColor.RED + "Cantidad inválida." );
+                    command.getSender ( ).sendMessage ( ChatColor.RED + "Cantidad inválida." );
                 }
                 break;
 
@@ -218,14 +222,14 @@ public class CmdKairos extends BaseCommand {
 
     public void showHelpMessage ( CommandArgs command ) {
         command.getSender ( ).sendMessage ( CC.translate ( "&8&m---------------------------------" ) );
-        command.getSender ( ).sendMessage ( CC.translate ( "&b&lFutureCore Kairos - Ayuda" ) );
-        command.getSender ( ).sendMessage ( CC.translate ( "&7/kairos balance &8- &fMuestra tu saldo actual" ) );
-        command.getSender ( ).sendMessage ( CC.translate ( "&7/kairos pay <jugador> <cantidad> &8- &fEnvía monedas a otro jugador" ) );
-        command.getSender ( ).sendMessage ( CC.translate ( "&7/kairos shop &8- &fAbre la tienda de intercambio" ) );
-        command.getSender ( ).sendMessage ( CC.translate ( "&7/kairos trader &8- &fIntercambia kairos virtuales por ítems físicos" ) );
-        command.getSender ( ).sendMessage ( CC.translate ( "&7/kairos additem <precio> &8- &fAgrega el ítem en tu mano a la tienda" ) );
-        command.getSender ( ).sendMessage ( CC.translate ( "&7/kairos item <cantidad> &8- &fConvierte el ítem en tu mano en una moneda kairos" ) );
-        command.getSender ( ).sendMessage ( CC.translate ( "&7/kairos get <cantidad> &8- &fObtiene una moneda física de kairos (para admins)" ) );
+        command.getSender ( ).sendMessage ( CC.translate ( "&b&lFutureCore Zenkais - Ayuda" ) );
+        command.getSender ( ).sendMessage ( CC.translate ( "&7/zenkais balance &8- &fMuestra tu saldo actual" ) );
+        command.getSender ( ).sendMessage ( CC.translate ( "&7/zenkais pay <jugador> <cantidad> &8- &fEnvía monedas a otro jugador" ) );
+        command.getSender ( ).sendMessage ( CC.translate ( "&7/zenkais shop &8- &fAbre la tienda de intercambio" ) );
+        command.getSender ( ).sendMessage ( CC.translate ( "&7/zenkais trader &8- &fIntercambia zenkais virtuales por ítems físicos" ) );
+        command.getSender ( ).sendMessage ( CC.translate ( "&7/zenkais additem <precio> &8- &fAgrega el ítem en tu mano a la tienda" ) );
+        command.getSender ( ).sendMessage ( CC.translate ( "&7/zenkais item <cantidad> &8- &fConvierte el ítem en tu mano en una moneda zenkais" ) );
+        command.getSender ( ).sendMessage ( CC.translate ( "&7/zenkais get <cantidad> &8- &fObtiene una moneda física de zenkais (para admins)" ) );
         command.getSender ( ).sendMessage ( CC.translate ( "&8&m---------------------------------" ) );
 
     }
