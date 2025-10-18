@@ -31,7 +31,7 @@ public class DarkScytheEvent implements Listener {
 
     @EventHandler
     public void onHit ( EntityDamageByEntityEvent event ) {
-        if (!(event.getDamager ( ) instanceof Player)) return;
+       /* if (!(event.getDamager ( ) instanceof Player)) return;
 
         Player player = (Player) event.getDamager ( );
         ItemStack item = player.getItemInHand ( );
@@ -109,7 +109,7 @@ public class DarkScytheEvent implements Listener {
                         incrementUse ( playerId, player );
                     }
                 }
-        }
+        }*/
     }
 
     private void incrementUse ( UUID playerId, Player player ) {

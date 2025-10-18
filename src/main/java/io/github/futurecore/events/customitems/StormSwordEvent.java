@@ -77,7 +77,7 @@ public class StormSwordEvent implements Listener {
                 }
                 ICustomNpc<?> npc = (ICustomNpc<?>) world
                         .getEntityByID ( event.getEntity ( ).getEntityId ( ) );
-                npc.setHealth ( npc.getHealth ( ) - (float) (npc.getHealth ( ) * 0.3) );
+                npc.setHealth ( npc.getHealth ( ) - (float) (npc.getHealth ( ) * 0.08) );
                 npc.getWorld ( ).thunderStrike ( npc.getPosition ( ) );
                 usosRestantes.put ( atacanteName, usos - 1 );
             }

@@ -1,15 +1,19 @@
 package io.github.futurecore;
-
 import io.github.futurecore.commands.player.cmdBosses.CmdBosses;
+import io.github.futurecore.events.customitems.LonginusSwordEvent;
 import io.github.futurecore.utils.ClassesRegistration;
 import io.github.futurecore.utils.ItemSerializationUtil;
 import io.github.futurecore.utils.commands.CommandFramework;
 import io.github.futurecore.utils.data.KairosData.PKairos;
+import io.github.futurecore.utils.data.KairosDataHandler.KairosDataHandler;
+import io.github.futurecore.utils.data.SerializacionKit;
 import io.github.futurecore.utils.handlers.bosses.BossStorage;
 import io.github.futurecore.utils.handlers.kairos.KairosHandlerManager;
 import io.github.futurecore.utils.handlers.kairos.KairosShopManager;
 import io.github.futurecore.utils.handlers.kairos.KairosStorage;
 import io.github.futurecore.utils.handlers.quests.LocationStorage;
+import io.github.futurecore.utils.menus.RaidMenu;
+import io.github.futurecore.utils.menus.RaidMenuT2;
 import net.luckperms.api.LuckPerms;
 import net.luckperms.api.LuckPermsProvider;
 import net.minecraft.util.io.netty.util.internal.ConcurrentSet;
@@ -27,6 +31,7 @@ import java.util.HashMap;
 import java.util.Random;
 
 import static io.github.futurecore.events.customitems.FruitOfPowerEvent.fruitOfPowerTask;
+import static io.github.futurecore.events.customitems.MagicStaff.saveBoosterCooldowns;
 import static io.github.futurecore.utils.data.KairosDataHandler.KairosDataHandler.itemsKairos;
 import static io.github.futurecore.utils.data.KairosDataHandler.KairosDataHandler.pKairos;
 import static net.minecraft.entity.boss.BossStatus.bossName;
@@ -60,6 +65,8 @@ public class Main extends JavaPlugin {
         classesRegistration.loadCommands ( "io.github.futurecore.commands.player.cmdUsages" );
         classesRegistration.loadCommands ( "io.github.futurecore.commands.player.cmdBosses" );
         classesRegistration.loadCommands ( "io.github.futurecore.commands.player.cmdcore" );
+        classesRegistration.loadCommands ( "io.github.futurecore.commands.player.cmdcore.cmdItemsAbilities" );
+        classesRegistration.loadCommands ( "io.github.futurecore.commands.player.cmdPlanets" );
         classesRegistration.loadCommands ( "io.github.futurecore.commands.player.cmdRaids" );
         classesRegistration.loadListeners ( "io.github.futurecore.events.bukkit" );
         classesRegistration.loadListeners ( "io.github.futurecore.events.customitems" );
@@ -88,7 +95,13 @@ public class Main extends JavaPlugin {
         System.out.println ( "By DelawareX" );
         LocationStorage.loadQuestData ( );
         KairosHandlerManager.startAutoSave ( this );
-        //startMusicTask();
+        File dataFile = new File ( Main.instance.getDataFolder ( ), "cooldownsT1.yml" );
+        File dataFile2 = new File ( Main.instance.getDataFolder ( ), "cooldownsT2.yml" );
+        RaidMenu.loadCooldowns ( dataFile );
+        RaidMenuT2.loadCooldowns ( dataFile2 );
+        SerializacionKit.cargarLista ( this );
+        KairosDataHandler.cargarMapa ( this );
+        LonginusSwordEvent.onTask ( );
     }
 
     @Override
@@ -99,6 +112,31 @@ public class Main extends JavaPlugin {
         BossStorage.saveNpcRarity ( this );
         LocationStorage.saveQuestData ( );
         LocationStorage.saveNpcLocations ( this, npcLocations );
+        File dataFile = new File ( Main.instance.getDataFolder ( ), "cooldownsT1.yml" );
+        File dataFile2 = new File ( Main.instance.getDataFolder ( ), "cooldownsT2.yml" );
+        RaidMenu.saveCooldowns ( dataFile );
+        RaidMenuT2.saveCooldowns ( dataFile2 );
+        SerializacionKit.guardarLista ( this );
+        KairosDataHandler.guardarMapa ( this );
+        saveBoosterCooldowns();
+    }
+
+    public String getEstadoRaid ( String raid ) {
+        if (raid.equalsIgnoreCase ( "t1" )) {
+            if (RaidMenu.EstadoRaid.EN_ESPERA == RaidMenu.estado) {
+                return "EN_ESPERA";
+            } else {
+                return "INICIADA";
+            }
+        } else if (raid.equalsIgnoreCase ( "t2" )) {
+            if (RaidMenuT2.EstadoRaid.EN_ESPERA == RaidMenuT2.estado) {
+                return "EN_ESPERA";
+            } else {
+                return "INICIADA";
+            }
+        }
+        return null;
+
     }
 
     public void startHourlyTask () {

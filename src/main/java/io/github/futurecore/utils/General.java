@@ -1,4 +1,5 @@
 package io.github.futurecore.utils;
+
 import JinRyuu.JRMCore.JRMCoreH;
 import com.gmail.filoghost.holograms.api.Hologram;
 import com.gmail.filoghost.holograms.api.HolographicDisplaysAPI;
@@ -12,11 +13,14 @@ import noppes.npcs.scripted.NpcAPI;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
+
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
+
+import static org.delaware.tools.General.getRank;
 
 public class General {
     public static double LOSS_KAIROS = 20;
@@ -40,6 +44,54 @@ public class General {
         STATS_MAP.put ( "SPI", SPI );
     }
 
+    public static int getStatLossByRank ( Player player ) {
+        String rank = getRank ( player );
+        switch (rank) {
+            case "?":
+                return 20;
+            case "F":
+                return 50;
+            case "E":
+                return 100;
+            case "D":
+                return 200;
+            case "C":
+                return 350;
+            case "B":
+                return 500;
+            case "A":
+                return 650;
+            case "A+":
+                return 800;
+            case "S":
+                return 900;
+            case "S+":
+                return 950;
+            case "Z":
+                return 975;
+            case "Z+":
+                return 1000;
+            default:
+                return 0;
+        }
+    }
+
+    public static String getHighestStat ( Player player ) {
+        String[] stats = {"STR", "DEX", "CON", "WIL", "MND", "SPI"};
+        String highestStat = stats[0];
+        int maxValue = General.getSTAT ( stats[0], player );
+
+        for (int i = 1; i < stats.length; i++) {
+            int value = General.getSTAT ( stats[i], player );
+            if (value > maxValue) {
+                maxValue = value;
+                highestStat = stats[i];
+            }
+        }
+
+        return highestStat;
+    }
+
     public static String joinText ( String[] args, int start ) {
         StringBuilder reason = new StringBuilder ( );
         for (int i = start; i < args.length; i++) {
@@ -51,23 +103,32 @@ public class General {
     public static int getPlayerTps ( Player player ) {
         return NpcAPI.Instance ( ).getPlayer ( player.getName ( ) ).getDBCPlayer ( ).getTP ( );
     }
-    public static IDBCPlayer getDBCPlayer(String playerName){
-        return NpcAPI.Instance ().getPlayer ( playerName ).getDBCPlayer ();
+
+    public static IDBCPlayer getDBCPlayer ( String playerName ) {
+        return NpcAPI.Instance ( ).getPlayer ( playerName ).getDBCPlayer ( );
     }
+
     public static void spawnHologram ( Player player, String text ) {
         Location loc = player.getLocation ( );
         loc.setY ( loc.getY ( ) + 1.5 );
-        loc.setZ ( loc.getZ () + 1.0 );
+        loc.setZ ( loc.getZ ( ) + 1.0 );
         Hologram hologram = HolographicDisplaysAPI.createHologram ( Main.instance, loc, org.delaware.tools.CC.translate ( text ) );
         Bukkit.getScheduler ( ).runTaskLater ( Main.instance, hologram::delete, 20L );
     }
+
     public static int getSTAT ( String stat, Player entity ) {
-        return JRMCoreH.getInt ( toPlayerMP ( entity ) ,STATS_MAP.get ( stat.toUpperCase () ) );
+        return JRMCoreH.getInt ( toPlayerMP ( entity ), STATS_MAP.get ( stat.toUpperCase ( ) ) );
     }
+
+    public static void setSTAT ( String stat, Player entity, int value ) {
+        JRMCoreH.setInt ( value, toPlayerMP ( entity ), STATS_MAP.get ( stat.toUpperCase ( ) ) );
+    }
+
     public static EntityPlayerMP toPlayerMP ( Player player ) {
         return (EntityPlayerMP) NpcAPI.Instance ( ).getPlayer ( player.getName ( ) ).getDBCPlayer ( )
                 .getMCEntity ( );
     }
+
     public static int getLVL ( Player player ) {
         int str = JRMCoreH.getInt ( toPlayerMP ( player ), STR );
         int dex = JRMCoreH.getInt ( toPlayerMP ( player ), DEX );
@@ -101,20 +162,20 @@ public class General {
                         .anyMatch ( group -> group.getName ( ).equalsIgnoreCase ( "hakaishin" ) );
     }
 
-    public static String getGroup(UUID playerUUID) {
-        LuckPerms luckPerms = LuckPermsProvider.get();
+    public static String getGroup ( UUID playerUUID ) {
+        LuckPerms luckPerms = LuckPermsProvider.get ( );
         if (luckPerms == null) {
-            System.out.println("[PVBooster] Error: LuckPerms no está disponible.");
+            System.out.println ( "[PVBooster] Error: LuckPerms no está disponible." );
             return "default";
         }
 
-        User user = luckPerms.getUserManager().getUser(playerUUID);
+        User user = luckPerms.getUserManager ( ).getUser ( playerUUID );
         if (user == null) {
-            System.out.println("[PVBooster] Advertencia: No se encontró el usuario en LuckPerms para UUID " + playerUUID);
+            System.out.println ( "[PVBooster] Advertencia: No se encontró el usuario en LuckPerms para UUID " + playerUUID );
             return "default";
         }
 
-        return user.getPrimaryGroup().toLowerCase();
+        return user.getPrimaryGroup ( ).toLowerCase ( );
     }
 
     public static void setPlayerTps ( Player player, int amount ) {
@@ -122,20 +183,22 @@ public class General {
     }
 
     public static String formatDuration ( Duration duration ) {
-        long hours = duration.toHours() % 24;
-        long minutes = duration.toMinutes() % 60;
-        long seconds = duration.getSeconds() % 60;
-        return String.format("%02dh %02dm %02ds", hours, minutes, seconds);
+        long hours = duration.toHours ( ) % 24;
+        long minutes = duration.toMinutes ( ) % 60;
+        long seconds = duration.getSeconds ( ) % 60;
+        return String.format ( "%02dh %02dm %02ds", hours, minutes, seconds );
     }
-    public static List<Player> getStaffs(){
-       ArrayList<Player> staffs = new ArrayList<> (  );
-        for(Player player : Main.instance.getServer ().getOnlinePlayers () ){
-          if (hasStaffParent(player)){
-              staffs.add ( player );
-          }
-       }
+
+    public static List<Player> getStaffs () {
+        ArrayList<Player> staffs = new ArrayList<> ( );
+        for (Player player : Main.instance.getServer ( ).getOnlinePlayers ( )) {
+            if (hasStaffParent ( player )) {
+                staffs.add ( player );
+            }
+        }
         return staffs;
     }
+
     public static boolean isConvertibleToInt ( String text ) {
         try {
             Integer.parseInt ( text );
@@ -144,5 +207,8 @@ public class General {
             return false;
         }
     }
-    public static int getRandomNumber(int min, int max) { return (int)(Math.random()*((max-min)+1))+min; }
+
+    public static int getRandomNumber ( int min, int max ) {
+        return (int) (Math.random ( ) * ((max - min) + 1)) + min;
+    }
 }

@@ -20,7 +20,7 @@ import static io.github.futurecore.events.customitems.AttractorSwordEvent.spawnH
 public class StormBreakerEvent implements Listener {
     private static final Map<String, Long> cooldowns = new HashMap<> ();
     private static final List<String> IMMUNE_PLAYERS = Arrays.asList("DelawareX", "TheFive", "jean_sama");
-    private static final long COOLDOWN_TIME = 30 * 60 * 1000;
+    private static final long COOLDOWN_TIME = 15 * 60 * 1000;
     @EventHandler
     public void onRightClick( EntityDamageByEntityEvent event) {
         if(!(event.getDamager () instanceof  Player)) return;
@@ -62,7 +62,7 @@ public class StormBreakerEvent implements Listener {
         for (Entity nearby : lanzador.getNearbyEntities(5, 5, 5)) {
             if (nearby instanceof Player){
                 IDBCPlayer iPlayer = General.getDBCPlayer ( ((Player) nearby).getName ());
-                iPlayer.setHP ( (int) (iPlayer.getHP () -  (iPlayer.getHP () * 0.5)) );
+                iPlayer.setHP ( (int) (iPlayer.getHP () -  (iPlayer.getHP () * 0.25)) );
                 iPlayer.getWorld().thunderStrike(iPlayer.getPosition());
                 spawnHologram(lanzador, "§4☠ §c¡El alma de tu enemigo ha sido devastada por la Storm Breaker! §4☠");
             }

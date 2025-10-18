@@ -1,6 +1,8 @@
 package io.github.futurecore.events.customitems;
 
+import io.github.futurecore.Main;
 import io.github.futurecore.commands.player.cmdUsages.CmdItemUsage;
+import io.github.futurecore.commands.player.cmdcore.cmdItemsAbilities.CmdSwordZ;
 import io.github.futurecore.utils.General;
 import noppes.npcs.api.entity.IDBCPlayer;
 import org.bukkit.entity.Player;
@@ -22,13 +24,23 @@ public class KatanaSwordEvent implements Listener {
     private final long COOLDOWN_TIME = 15 * 60 * 1000;
 
     @EventHandler
-    public void onPlayerDamage ( EntityDamageByEntityEvent event ) {
+    public void onPlayerDamage ( EntityDamageByEntityEvent event ) throws Exception {
         if (!(event.getDamager ( ) instanceof Player)) return;
-
         Player player = (Player) event.getDamager ( );
         UUID uuid = player.getUniqueId ( );
         ItemStack item = player.getItemInHand ( );
-
+        if (CmdSwordZ.isEspadaZ ( item )){
+            ItemStack updated = CmdItemUsage.hasUses ( item, player );
+            if (updated == null) {
+                player.setItemInHand ( null );
+                Main.instance.getServer ().dispatchCommand ( Main.instance.getServer ().getConsoleSender (),
+                        "kam form give "+  player.getName () + " Mistico");
+            } else {
+                player.setItemInHand ( updated );
+            }
+            player.updateInventory ( );
+            return;
+        }
         if (item == null || item.getTypeId ( ) != 6118) return;
 
         long now = System.currentTimeMillis ( );

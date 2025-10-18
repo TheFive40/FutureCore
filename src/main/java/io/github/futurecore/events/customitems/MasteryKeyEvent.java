@@ -2,8 +2,10 @@ package io.github.futurecore.events.customitems;
 
 import io.github.futurecore.Main;
 import io.github.futurecore.commands.player.cmdUsages.CmdItemUsage;
+import io.github.futurecore.commands.player.cmdcore.cmdItemsAbilities.CmdKiScythe2;
 import io.github.futurecore.utils.General;
 import kamkeel.npcdbc.constants.DBCClass;
+import kamkeel.npcdbc.constants.DBCForm;
 import noppes.npcs.api.IPos;
 import noppes.npcs.api.IWorld;
 import noppes.npcs.api.entity.ICustomNpc;
@@ -28,28 +30,27 @@ import static io.github.futurecore.events.customitems.AttractorSwordEvent.spawnH
 
 public class MasteryKeyEvent implements Listener {
 
-    private final Map<UUID, Long> cooldowns = new HashMap<>();
+    private final Map<UUID, Long> cooldowns = new HashMap<> ( );
     private static final long COOLDOWN_MS = 10 * 60 * 1000; // 10 minutos
 
     @EventHandler
-    public void onClick(PlayerInteractEntityEvent event) {
-        Player lanzador = event.getPlayer();
-        Entity entity = event.getRightClicked();
+    public void onClick ( PlayerInteractEntityEvent event ) {
+        Player lanzador = event.getPlayer ( );
+        Entity entity = event.getRightClicked ( );
+        if (lanzador.getItemInHand ( ).getTypeId ( ) != 6152 && !CmdKiScythe2.isGuadana ( lanzador.getItemInHand ( ) ))
+            return;
+        UUID uuid = lanzador.getUniqueId ( );
+        long now = System.currentTimeMillis ( );
 
-        if (lanzador.getItemInHand().getTypeId() != 6152) return;
-
-        UUID uuid = lanzador.getUniqueId();
-        long now = System.currentTimeMillis();
-
-        if (cooldowns.containsKey(uuid)) {
-            long lastUse = cooldowns.get(uuid);
+        if (cooldowns.containsKey ( uuid )) {
+            long lastUse = cooldowns.get ( uuid );
             long elapsed = now - lastUse;
 
             if (elapsed < COOLDOWN_MS) {
                 long remaining = COOLDOWN_MS - elapsed;
                 int seconds = (int) (remaining / 1000) % 60;
                 int minutes = (int) (remaining / 1000) / 60;
-                spawnHologram(lanzador, String.format("§c⌛ Debes esperar %02d:%02d para usar la llave otra vez.", minutes, seconds));
+                spawnHologram ( lanzador, String.format ( "§c⌛ Debes esperar %02d:%02d para usar la llave otra vez.", minutes, seconds ) );
                 return;
             }
         }
@@ -67,82 +68,93 @@ public class MasteryKeyEvent implements Listener {
             }
         } catch (Exception ignored) {
         }
-        cooldowns.put(uuid, now);
-        IWorld world = NpcAPI.Instance().getPlayer(lanzador.getName()).getWorld();
-        IEntity<?> iEntity = world.getEntityByID(entity.getEntityId());
-        IPos position = iEntity.getPosition();
+        cooldowns.put ( uuid, now );
+        IWorld world = NpcAPI.Instance ( ).getPlayer ( lanzador.getName ( ) ).getWorld ( );
+        IEntity<?> iEntity = world.getEntityByID ( entity.getEntityId ( ) );
+        IPos position = iEntity.getPosition ( );
 
-        world.thunderStrike(position.getX() + 2, position.getY(), position.getZ());
-        world.thunderStrike(position.getX() - 2, position.getY(), position.getZ());
-        world.thunderStrike(position.getX(), position.getY(), position.getZ() + 2);
+        world.thunderStrike ( position.getX ( ) + 2, position.getY ( ), position.getZ ( ) );
+        world.thunderStrike ( position.getX ( ) - 2, position.getY ( ), position.getZ ( ) );
+        world.thunderStrike ( position.getX ( ), position.getY ( ), position.getZ ( ) + 2 );
+        String npcName = (CmdKiScythe2.isGuadana ( lanzador.getItemInHand ( ) )) ? "BautyXL123" : "Guardianes";
+        ICustomNpc<?> npc1 = (ICustomNpc<?>) world.spawnClone ( position.getX ( ) + 2, position.getY ( ), position.getZ ( ), 1, npcName );
+        ICustomNpc<?> npc2 = (ICustomNpc<?>) world.spawnClone ( position.getX ( ) - 2, position.getY ( ), position.getZ ( ), 1, npcName );
+        ICustomNpc<?> npc3 = (ICustomNpc<?>) world.spawnClone ( position.getX ( ), position.getY ( ), position.getZ ( ) + 2, 1, npcName );
 
-        ICustomNpc<?> npc1 = (ICustomNpc<?>) world.spawnClone(position.getX() + 2, position.getY(), position.getZ(), 1, "Guardianes");
-        ICustomNpc<?> npc2 = (ICustomNpc<?>) world.spawnClone(position.getX() - 2, position.getY(), position.getZ(), 1, "Guardianes");
-        ICustomNpc<?> npc3 = (ICustomNpc<?>) world.spawnClone(position.getX(), position.getY(), position.getZ() + 2, 1, "Guardianes");
 
-        IDBCPlayer idbcPlayer = General.getDBCPlayer(lanzador.getName());
+        IDBCPlayer idbcPlayer = General.getDBCPlayer ( lanzador.getName ( ) );
         double Melee;
-        int hp = idbcPlayer.getBody();
-        int dex = idbcPlayer.getNbt().getCompound("PlayerPersisted").getInteger(org.delaware.tools.General.DEX);
-        int WIL = idbcPlayer.getNbt().getCompound("PlayerPersisted").getInteger(org.delaware.tools.General.WIL);
-        Melee = (idbcPlayer.getDBCClass() != DBCClass.Spiritualist) ? idbcPlayer.getMeleeStrength() : WIL * 10;
+        int hp = idbcPlayer.getBody ( );
+        int dex = idbcPlayer.getNbt ( ).getCompound ( "PlayerPersisted" ).getInteger ( org.delaware.tools.General.DEX );
+        int WIL = idbcPlayer.getNbt ( ).getCompound ( "PlayerPersisted" ).getInteger ( org.delaware.tools.General.WIL );
+        Melee = (idbcPlayer.getDBCClass ( ) != DBCClass.Spiritualist) ? idbcPlayer.getMeleeStrength ( ) : WIL * 10;
 
-        npc1.setMeleeStrength(Melee);
-        npc1.setMaxHealth(hp);
-        npc1.setCombatRegen(dex);
+        npc1.setMeleeStrength ( Melee );
+        npc1.setMaxHealth ( hp );
+        npc1.setCombatRegen ( dex );
 
-        npc2.setMeleeStrength(Melee);
-        npc2.setMaxHealth(hp);
-        npc2.setCombatRegen(dex);
+        npc2.setMeleeStrength ( Melee );
+        npc2.setMaxHealth ( hp );
+        npc2.setCombatRegen ( dex );
 
-        npc3.setMeleeStrength(Melee);
-        npc3.setMaxHealth(hp);
-        npc3.setCombatRegen(dex);
-
-        spawnHologram(lanzador, "&e⚔ &6¡Guardianes protectores invocados! &e⚔");
+        npc3.setMeleeStrength ( Melee );
+        npc3.setMaxHealth ( hp );
+        npc3.setCombatRegen ( dex );
+        if (CmdKiScythe2.isGuadana ( lanzador.getItemInHand ( ) )) {
+            int con = General.getSTAT ( "CON", lanzador );
+            int str = General.getSTAT ( "STR", lanzador );
+            int body = (int) (con * 24.5);
+            npc1.setMaxHealth ( body );
+            npc2.setMaxHealth ( body );
+            npc3.setMaxHealth ( body );
+            npc1.setMeleeStrength ( str * 8.58 );
+            npc2.setMeleeStrength ( str * 8.58 );
+            npc3.setMeleeStrength ( str * 8.58 );
+        }
+        spawnHologram ( lanzador, "&e⚔ &6¡Guardianes protectores invocados! &e⚔" );
 
         if (iEntity instanceof ICustomNpc<?>) {
             ICustomNpc<?> entityNpc = (ICustomNpc<?>) iEntity;
-            npc1.setAttackFactions(true);
-            npc2.setAttackFactions(true);
-            npc3.setAttackFactions(true);
-            npc1.setAttackTarget(entityNpc);
-            npc2.setAttackTarget(entityNpc);
-            npc3.setAttackTarget(entityNpc);
+            npc1.setAttackFactions ( true );
+            npc2.setAttackFactions ( true );
+            npc3.setAttackFactions ( true );
+            npc1.setAttackTarget ( entityNpc );
+            npc2.setAttackTarget ( entityNpc );
+            npc3.setAttackTarget ( entityNpc );
         } else if (iEntity instanceof IPlayer<?>) {
             IPlayer<?> iPlayer = (IPlayer<?>) iEntity;
-            npc1.setAttackTarget(iPlayer);
-            npc2.setAttackTarget(iPlayer);
-            npc3.setAttackTarget(iPlayer);
+            npc1.setAttackTarget ( iPlayer );
+            npc2.setAttackTarget ( iPlayer );
+            npc3.setAttackTarget ( iPlayer );
         }
 
-        new BukkitRunnable() {
+        new BukkitRunnable ( ) {
             @Override
-            public void run() {
+            public void run () {
                 if (iEntity instanceof IPlayer<?>) {
                     IPlayer<?> iPlayer = (IPlayer<?>) iEntity;
-                    npc1.setAttackTarget(iPlayer);
-                    npc2.setAttackTarget(iPlayer);
-                    npc3.setAttackTarget(iPlayer);
+                    npc1.setAttackTarget ( iPlayer );
+                    npc2.setAttackTarget ( iPlayer );
+                    npc3.setAttackTarget ( iPlayer );
                 } else if (iEntity instanceof ICustomNpc<?>) {
                     ICustomNpc<?> entityNpc = (ICustomNpc<?>) iEntity;
-                    npc1.setAttackFactions(true);
-                    npc2.setAttackFactions(true);
-                    npc3.setAttackFactions(true);
-                    npc1.setAttackTarget(entityNpc);
-                    npc2.setAttackTarget(entityNpc);
-                    npc3.setAttackTarget(entityNpc);
+                    npc1.setAttackFactions ( true );
+                    npc2.setAttackFactions ( true );
+                    npc3.setAttackFactions ( true );
+                    npc1.setAttackTarget ( entityNpc );
+                    npc2.setAttackTarget ( entityNpc );
+                    npc3.setAttackTarget ( entityNpc );
                 }
             }
-        }.runTaskTimer(Main.instance, 0L, 20L);
+        }.runTaskTimer ( Main.instance, 0L, 20L );
 
-        new BukkitRunnable() {
+        new BukkitRunnable ( ) {
             @Override
-            public void run() {
-                npc1.kill();
-                npc2.kill();
-                npc3.kill();
+            public void run () {
+                npc1.kill ( );
+                npc2.kill ( );
+                npc3.kill ( );
             }
-        }.runTaskLater(Main.instance, 200L); // 10 segundos
+        }.runTaskLater ( Main.instance, 200L );
     }
 }

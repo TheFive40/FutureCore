@@ -4,7 +4,6 @@ import io.github.futurecore.Main;
 import io.github.futurecore.utils.CC;
 import io.github.futurecore.utils.General;
 import io.github.futurecore.utils.RegionUtils;
-import net.minecraft.entity.player.EntityPlayerMP;
 import noppes.npcs.api.entity.IDBCPlayer;
 import noppes.npcs.scripted.NpcAPI;
 import org.bukkit.*;
@@ -84,7 +83,6 @@ public class HotPotato implements Listener {
                 holder.performCommand ( "warp spawn" );
                 holder.setItemInHand ( null );
                 sendMessageToRegionPlayers ( prefix + ChatColor.RED + holder.getName ( ) + " ha sido eliminado." );
-
                 potatoHolder = null;
                 checkEndGame ( );
             }
@@ -93,12 +91,22 @@ public class HotPotato implements Listener {
     }
 
     @EventHandler
+    public void onDropItem ( PlayerDropItemEvent event ) {
+        if (!gameRunning || potatoHolder == null) return;
+        Player player = event.getPlayer ( );
+        ItemStack itemDrop = event.getItemDrop ( ).getItemStack ( );
+        if (itemDrop != null && itemDrop.getTypeId ( ) == 393 && potatoHolder.equals ( player.getUniqueId () )){
+            event.setCancelled ( true );
+        }
+    }
+
+    @EventHandler
     public void onInventoryClick ( InventoryClickEvent e ) {
         if (!(e.getWhoClicked ( ) instanceof Player)) return;
-
         Player player = (Player) e.getWhoClicked ( );
         if (!gameRunning || potatoHolder == null) return;
-
+        RegionUtils regionUtils = new RegionUtils ( );
+        if (!regionUtils.isPlayerInRegion ( player, "minigameHotpotato" )) return;
         if (e.getCurrentItem ( ) != null && e.getCurrentItem ( ).getTypeId ( ) == 393) {
             e.setCancelled ( true );
             player.sendMessage ( prefix + ChatColor.RED + "No puedes mover la Patata Caliente en tu inventario." );
@@ -187,8 +195,10 @@ public class HotPotato implements Listener {
                 potatoHolder = null;
                 int lvl = General.getLVL ( winner );
                 int tpGain = lvl * 60;
-                IDBCPlayer jugador = NpcAPI.Instance ().getPlayer ( winner.getName () ).getDBCPlayer ();
-                jugador.setTP ( jugador.getTP () + tpGain );
+                Main.instance.getServer ( ).dispatchCommand ( Main.instance.getServer ( ).getConsoleSender ( ), "eco give " + winner.getName ( ) +
+                        " 500" );
+                Main.instance.getServer ( ).dispatchCommand ( Main.instance.getServer ( ).getConsoleSender ( ), "dartps " + winner.getName ( ) +
+                        " " + tpGain );
             } else {
                 sendMessageToRegionPlayers ( prefix + ChatColor.GRAY + "Todos los jugadores han sido eliminados." );
                 eliminated.clear ( );

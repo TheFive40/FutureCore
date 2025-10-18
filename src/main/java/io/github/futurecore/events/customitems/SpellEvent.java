@@ -1,5 +1,6 @@
 package io.github.futurecore.events.customitems;
 
+import io.github.futurecore.utils.CC;
 import io.github.futurecore.utils.General;
 import noppes.npcs.api.entity.IDBCPlayer;
 import org.bukkit.entity.Player;
@@ -9,14 +10,14 @@ import org.bukkit.event.block.Action;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.ItemStack;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 import static io.github.futurecore.events.customitems.AttractorSwordEvent.spawnHologram;
 
 public class SpellEvent implements Listener {
     private static final Map<String, Long> cooldowns = new HashMap<> ( );
-    private static final long COOLDOWN_TIME = 15 * 60 * 1000;
+    public static  List<UUID> kitGogetta = new ArrayList<> ( );
+    private static final long COOLDOWN_TIME = 5 * 60 * 1000;
     private int spell = 4143;
 
     @EventHandler
@@ -24,6 +25,12 @@ public class SpellEvent implements Listener {
         ItemStack item = event.getPlayer ( ).getItemInHand ( );
         if (item == null) return;
         if (item.getTypeId ( ) != spell) return;
+        if (!kitGogetta.contains ( event.getPlayer ( ).getUniqueId ( ) )) {
+            event.getPlayer ().sendMessage ( CC.translate ( "&cDebes ligar este kit con tu cuenta.") );
+            event.getPlayer ().sendMessage ( CC.translate ( "&cPor favor abrir ticket en discord.") );
+            event.getPlayer ().sendMessage ( CC.translate ( "&cAtentamente: &4El quipo del Staff") );
+            return;
+        }
         if (event.getAction ( ) == Action.RIGHT_CLICK_AIR) {
             long currentTime = System.currentTimeMillis ( );
             if (cooldowns.containsKey ( event.getPlayer ( ).getName ( ) )) {

@@ -10,6 +10,7 @@ import io.github.futurecore.utils.data.KairosData.ItemKairos;
 import io.github.futurecore.utils.data.KairosData.PKairos;
 import io.github.futurecore.utils.data.KairosDataHandler.KairosDataHandler;
 import io.github.futurecore.utils.handlers.kairos.KairosShopManager;
+import io.github.futurecore.utils.handlers.kairos.KairosShopMenu;
 import io.github.futurecore.utils.handlers.kairos.KairosTopMenu;
 import io.github.futurecore.utils.handlers.kairos.KairosTraderManager;
 import org.bukkit.ChatColor;
@@ -115,7 +116,7 @@ public class CmdKairos extends BaseCommand {
                     DecimalFormat formatter = new DecimalFormat ( "#,###.00" );
                     String formattedPrice = formatter.format ( price );
                     ItemMeta meta = handItem.getItemMeta ( );
-                    List<String> lore = meta.hasLore ( ) ? new ArrayList<> ( meta.getLore ( ) ) : new ArrayList<> ( );
+                    ArrayList<String> lore = meta.hasLore ( ) ? new ArrayList<> ( meta.getLore ( ) ) : new ArrayList<> ( );
                     lore.add ( CC.translate ( "&f " ) );
                     lore.add ( ChatColor.GREEN + "Precio: " + ChatColor.GOLD + "$" + formattedPrice + " Zenkais" );
                     meta.setLore ( lore );
@@ -131,7 +132,7 @@ public class CmdKairos extends BaseCommand {
                     }
 
                     NbtHandler nbtHandler = new NbtHandler ( handItem );
-                    int maxUses = nbtHandler.getInteger ( "maxUses" );
+                    KairosDataHandler.putItem ( lore, nbtHandler.getString ( "CUSTOMID" ) );
                     KairosShopManager.items.add ( handItem );
                     ItemSerializationUtil.saveItemsToFile ( file, KairosShopManager.items );
 

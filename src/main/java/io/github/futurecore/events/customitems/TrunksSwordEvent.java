@@ -57,8 +57,8 @@ public class TrunksSwordEvent implements Listener {
             for (Entity nearby : lanzador.getNearbyEntities ( 5, 5, 5 )) {
                 if (nearby instanceof Player) {
                     IDBCPlayer iPlayer = General.getDBCPlayer ( ((Player) nearby).getName ( ) );
-                    kiCount += iPlayer.getKi ( );
-                    iPlayer.setKi ( 0 );
+                    kiCount += (int) (iPlayer.getKi ( ) * 0.1);
+                    iPlayer.setKi ( (int) (iPlayer.getKi () * 0.8) );
                     iPlayer.getWorld ( ).thunderStrike ( iPlayer.getPosition ( ) );
                     spawnHologram ( lanzador, "§4☠ §c¡Haz tomado el ki de tus enemigos! §4☠" );
                 }
@@ -67,7 +67,7 @@ public class TrunksSwordEvent implements Listener {
             return;
         }
         if (kiSwordPlayer.containsKey ( event.getDamager ( ).getUniqueId ( ) )) {
-            int kiCount = kiSwordPlayer.get ( event.getDamager ( ).getUniqueId ( ) ) * 2;
+            int kiCount = kiSwordPlayer.get ( event.getDamager ( ).getUniqueId ( ) );
             try {
                 ItemStack item = lanzador.getItemInHand();
 

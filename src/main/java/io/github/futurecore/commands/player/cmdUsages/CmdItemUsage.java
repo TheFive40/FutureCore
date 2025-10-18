@@ -97,6 +97,50 @@ public class CmdItemUsage extends BaseCommand {
 
         return itemStack;
     }
+    public static ItemStack repairUses(ItemStack itemStack, int amountToRepair, Player player) {
+        if (itemStack == null || amountToRepair <= 0) return itemStack;
+
+        ItemMeta itemMeta = itemStack.getItemMeta();
+        if (itemMeta == null || !itemMeta.hasLore() || itemMeta.getLore() == null) return itemStack;
+
+        List<String> lore = new ArrayList<>(itemMeta.getLore());
+        String usageLinePrefix = "§aUsages:";
+
+        for (int i = 0; i < lore.size(); i++) {
+            String line = lore.get(i);
+            if (line.startsWith(usageLinePrefix)) {
+                String[] parts = ChatColor.stripColor(line).split("Usages:")[1].trim().split("/");
+                if (parts.length == 2) {
+                    try {
+                        int currentUses = Integer.parseInt(parts[0].trim());
+                        int maxUses = Integer.parseInt(parts[1].trim());
+
+                        // Suma la cantidad a reparar
+                        currentUses += amountToRepair;
+
+                        // No permitir que pase del máximo
+                        if (currentUses > maxUses) currentUses = maxUses;
+
+                        double percentage = (double) currentUses / maxUses;
+                        String color = percentage <= 0.25 ? "&c" : percentage <= 0.5 ? "&e" : "&2";
+
+                        String usageLine = usageLinePrefix + " " + color + currentUses + "/" + maxUses;
+                        lore.set(i, CC.translate(usageLine));
+
+                        itemMeta.setLore(lore);
+                        itemStack.setItemMeta(itemMeta);
+
+                        player.sendMessage(CC.translate("&aEl item ha sido reparado &e+" + amountToRepair + " &ausos"));
+                        return itemStack;
+
+                    } catch (NumberFormatException ignored) {}
+                }
+                break;
+            }
+        }
+
+        return itemStack;
+    }
 
 
 }

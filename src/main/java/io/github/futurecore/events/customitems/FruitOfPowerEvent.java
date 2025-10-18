@@ -20,7 +20,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class FruitOfPowerEvent implements Listener {
 
     private final int itemId = 6071;
-    private static final ConcurrentHashMap<UUID, LocalDateTime> fruitUsers = new ConcurrentHashMap<>();
+    public static final ConcurrentHashMap<UUID, LocalDateTime> fruitUsers = new ConcurrentHashMap<>();
 
     @EventHandler
     public void onRightClick(PlayerInteractEvent event) {
@@ -61,17 +61,19 @@ public class FruitOfPowerEvent implements Listener {
                     if (fruitUsers.containsKey(uuid)) {
                         LocalDateTime startTime = fruitUsers.get(uuid);
                         Duration duration = Duration.between(startTime, LocalDateTime.now());
+                        IDBCPlayer idbcPlayer = NpcAPI.Instance().getPlayer(player.getName()).getDBCPlayer();
 
-                        if (duration.toMinutes() >= 15) {
+                        if (duration.toMinutes() >= 5) {
                             fruitUsers.remove(uuid);
+                            idbcPlayer.removeBonusAttribute ( "Strength", "FruitOfPower" );
                             player.sendMessage(CC.translate("&cEl efecto de la fruta del &4poder &cha expirado."));
                             player.playSound(player.getLocation(), "jinryuudragonbc:1610.sse", 1.0F, 1.0F);
+                            idbcPlayer.setRelease ( (byte) 100 );
                             continue;
                         }
-
-                        IDBCPlayer idbcPlayer = NpcAPI.Instance().getPlayer(player.getName()).getDBCPlayer();
-                        idbcPlayer.setStamina((int) (idbcPlayer.getStamina() * 0.01 + idbcPlayer.getStamina()));
-                        idbcPlayer.setKi((int) (idbcPlayer.getKi() * 0.01 + idbcPlayer.getKi()));
+                        idbcPlayer.addBonusAttribute ( "Strength", "FruitOfPower", "*", 1.20, false );
+                        idbcPlayer.addBonusAttribute ( "Strength", "Willpower", "*", 1.20, false );
+                        idbcPlayer.setStamina((int) (idbcPlayer.getStamina() * 0.02 + idbcPlayer.getStamina()));
                     }
                 }
             }

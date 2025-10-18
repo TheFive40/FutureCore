@@ -1,7 +1,8 @@
 package io.github.futurecore.minigames;
+
 import io.github.futurecore.utils.General;
 import io.github.futurecore.utils.RegionUtils;
-import io.github.futurecore.utils.menus.RaidMenu;
+import io.github.futurecore.utils.menus.RaidMenuT2;
 import noppes.npcs.api.entity.ICustomNpc;
 import noppes.npcs.api.entity.IDBCPlayer;
 import org.bukkit.Bukkit;
@@ -13,13 +14,14 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
+
 import java.util.UUID;
 
-import static io.github.futurecore.utils.menus.RaidMenu.jugadores;
+import static io.github.futurecore.utils.menus.RaidMenuT2.jugadores;
 
-public class BossRaid implements Listener {
+public class BossRaidT2 implements Listener {
     public static int bossHits = 0;
-    private static final String REGION_RAID = "raidt1";
+    private static final String REGION_RAID = "raidt2";
 
     @EventHandler
     public void onPlayerMove ( PlayerMoveEvent event ) {
@@ -36,36 +38,36 @@ public class BossRaid implements Listener {
         boolean wasIn = RegionUtils.isLocationInRegion ( from, REGION_RAID );
         boolean isNowIn = RegionUtils.isLocationInRegion ( to, REGION_RAID );
         UUID uuid = player.getUniqueId ( );
-        if(!isNowIn && RaidMenu.getJugadores ( ).contains ( uuid )){
+        if(!isNowIn && RaidMenuT2.getJugadores ( ).contains ( uuid )){
             jugadores.remove ( uuid );
         }
-        if (isNowIn && !RaidMenu.getJugadores ( ).contains ( uuid ) && !General.hasStaffParent ( player )) {
+        if (isNowIn && !RaidMenuT2.getJugadores ( ).contains ( uuid ) && !General.hasStaffParent ( player )) {
             player.sendMessage ( ChatColor.RED + "No estás registrado en esta raid. Te regresamos al spawn." );
             Bukkit.dispatchCommand ( Bukkit.getConsoleSender ( ), "warp spawn " + player.getName ( ) );
         }
 
-        if (wasIn && !isNowIn && RaidMenu.getJugadores ( ).contains ( uuid )) {
-            RaidMenu.removeJugador ( uuid );
+        if (wasIn && !isNowIn && RaidMenuT2.getJugadores ( ).contains ( uuid )) {
+            RaidMenuT2.removeJugador ( uuid );
             player.sendMessage ( ChatColor.RED + "Has salido de la zona de raid. Fuiste eliminado de la raid." );
             if(jugadores.isEmpty ()){
-                RaidMenu.estado = RaidMenu.EstadoRaid.EN_ESPERA;
+                RaidMenuT2.estado = RaidMenuT2.EstadoRaid.EN_ESPERA;
             }
         }
     }
 
     @EventHandler
     public void onBossDamaged ( EntityDamageByEntityEvent event ) {
-        ICustomNpc<?> boss = RaidMenu.getCurrentBoss ( );
+        ICustomNpc<?> boss = RaidMenuT2.getCurrentBoss ( );
         if (!(event.getDamager ( ) instanceof Player)) return;
         if (boss == null || !boss.isAlive ( )) return;
-        if (!RegionUtils.isLocationInRegion ( event.getDamager ( ).getLocation ( ), "raidt1" ))
+        if (!RegionUtils.isLocationInRegion ( event.getDamager ( ).getLocation ( ), "raidt2" ))
             return;
         int id = event.getEntity ( ).getEntityId ( );
         IDBCPlayer idbcPlayer = General.getDBCPlayer ( ((Player) event.getDamager ( )).getName ( ) );
         ICustomNpc<?> iCustomNpc = (ICustomNpc<?>) idbcPlayer.getWorld ( ).getEntityByID ( id );
         if (!iCustomNpc.equals ( boss )) return;
         UUID uuid = event.getDamager ( ).getUniqueId ( );
-        RaidMenu.getRankingHits ( ).put ( uuid, RaidMenu.getRankingHits ( ).getOrDefault ( uuid, 0 ) + 1 );
+        RaidMenuT2.getRankingHits ( ).put ( uuid, RaidMenuT2.getRankingHits ( ).getOrDefault ( uuid, 0 ) + 1 );
         bossHits++;
     }
 
@@ -74,8 +76,8 @@ public class BossRaid implements Listener {
         Player player = event.getEntity ( );
         UUID uuid = player.getUniqueId ( );
 
-        if (RaidMenu.getJugadores ( ).contains ( uuid )) {
-            RaidMenu.removeJugador ( uuid );
+        if (RaidMenuT2.getJugadores ( ).contains ( uuid )) {
+            RaidMenuT2.removeJugador ( uuid );
             Bukkit.broadcastMessage ( ChatColor.RED + "[RAID] " + player.getName ( ) + " ha sido eliminado de la raid por morir." );
         }
     }

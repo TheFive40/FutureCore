@@ -2,12 +2,9 @@ package io.github.futurecore.events.customitems;
 
 import io.github.futurecore.Main;
 import io.github.futurecore.commands.player.cmdUsages.CmdItemUsage;
+import io.github.futurecore.commands.player.cmdcore.cmdItemsAbilities.CmdKiScythe;
 import io.github.futurecore.utils.General;
-import noppes.npcs.api.IWorld;
-import noppes.npcs.api.entity.ICustomNpc;
 import noppes.npcs.api.entity.IDBCPlayer;
-import noppes.npcs.api.entity.IEntity;
-import noppes.npcs.scripted.NpcAPI;
 import org.bukkit.Bukkit;
 import org.bukkit.Sound;
 import org.bukkit.entity.Player;
@@ -30,44 +27,54 @@ public class FinalSpiritSwordEvent implements Listener {
 
     private static final int ITEM_ID = 4951;
     private static final double PROBABILIDAD = 0.15;
-    private static final long COOLDOWN = 6 * 60 * 1000;
+
+    private static final long COOLDOWN_ESPADA = 15 * 60 * 1000; // 15 min
+    private static final long COOLDOWN_GUADANA = 5 * 60 * 1000; // 5 min
+
     private static final int MAX_USOS_ANTES_COOLDOWN = 3;
 
-    private final Map<String, Long> cooldowns = new HashMap<>();
-    private final Map<String, Integer> usosPrevios = new HashMap<>();
-    private final Random random = new Random();
+    private final Map<String, Long> cooldowns = new HashMap<> ( );
+    private final Map<String, Integer> usosPrevios = new HashMap<> ( );
+    private final Random random = new Random ( );
 
     @EventHandler
-    public void onHit(EntityDamageByEntityEvent event) {
-        if (!(event.getDamager() instanceof Player)) return;
+    public void onHit ( EntityDamageByEntityEvent event ) {
+        if (!(event.getDamager ( ) instanceof Player)) return;
+        if (!(event.getEntity ( ) instanceof Player)) return;
+        Player attacker = (Player) event.getDamager ( );
+        ItemStack weapon = attacker.getItemInHand ( );
+        if (weapon == null) return;
 
-        Player attacker = (Player) event.getDamager();
-        ItemStack weapon = attacker.getItemInHand();
-        if (weapon == null || weapon.getTypeId() != ITEM_ID) return;
+        boolean isGuadana = CmdKiScythe.isGuadana ( weapon );
+        boolean isEspadaFinal = weapon.getTypeId ( ) == ITEM_ID && !isGuadana;
+        if (!isEspadaFinal && !isGuadana) return;
 
-        String attackerName = attacker.getName();
-        long now = System.currentTimeMillis();
-        boolean isImmune = attackerName.equalsIgnoreCase("DelawareX") ||
-                attackerName.equalsIgnoreCase("TheFive") ||
-                attackerName.equalsIgnoreCase("jean_sama");
+        String attackerName = attacker.getName ( );
+        long now = System.currentTimeMillis ( );
+        long cooldown = isGuadana ? COOLDOWN_GUADANA : COOLDOWN_ESPADA;
 
-        if (!isImmune && cooldowns.containsKey(attackerName)) {
-            long lastUse = cooldowns.get(attackerName);
-            if (now - lastUse < COOLDOWN) {
-                long remaining = COOLDOWN - (now - lastUse);
+        boolean isImmune = attackerName.equalsIgnoreCase ( "DelawareX" ) ||
+                attackerName.equalsIgnoreCase ( "TheFive" ) ||
+                attackerName.equalsIgnoreCase ( "jean_sama" );
+
+        if (!isImmune && cooldowns.containsKey ( attackerName )) {
+            long lastUse = cooldowns.get ( attackerName );
+            if (now - lastUse < cooldown) {
+                long remaining = cooldown - (now - lastUse);
                 int minutes = (int) (remaining / 1000) / 60;
                 int seconds = (int) (remaining / 1000) % 60;
-                spawnHologram(attacker, String.format("§e⌛ Espada en cooldown: %02d:%02d", minutes, seconds));
+                spawnHologram ( attacker,
+                        String.format ( "§e⌛ %s en cooldown: %02d:%02d",
+                                isGuadana ? "Guadaña" : "Espada", minutes, seconds ) );
                 return;
             }
         }
 
-        if (random.nextDouble() <= PROBABILIDAD) {
+        // Probabilidad solo si es espada, la guadaña es 100% de activación
+        if (isGuadana || random.nextDouble ( ) <= PROBABILIDAD) {
             try {
-                ItemStack item = attacker.getItemInHand ( );
-
-                if (!hasPermanent ( item )) {
-                    ItemStack updated = CmdItemUsage.hasUses ( item, attacker );
+                if (!hasPermanent ( weapon )) {
+                    ItemStack updated = CmdItemUsage.hasUses ( weapon, attacker );
                     if (updated == null) {
                         attacker.setItemInHand ( null );
                     } else {
@@ -77,66 +84,65 @@ public class FinalSpiritSwordEvent implements Listener {
                 }
             } catch (Exception ignored) {
             }
-            IWorld world = NpcAPI.Instance().getPlayer(attackerName).getWorld();
-            IEntity<?> iEntity = world.getEntityByID(event.getEntity().getEntityId());
 
-            if (iEntity instanceof ICustomNpc<?>) {
-                ICustomNpc<?> npc = (ICustomNpc<?>) iEntity;
-                npc.setHealth((float) (npc.getHealth() * 0.75));
-                attacker.getWorld().playSound(attacker.getLocation (), Sound.WITHER_HURT, 1f, 1f);
-                spawnHologram(attacker, "§6⚔ §e¡Golpe de Espíritu Final!");
-                registrarUso(attackerName, now, isImmune);
-                return;
-            }
+            Player target = (Player) event.getEntity ( );
+            IDBCPlayer dbcTarget = General.getDBCPlayer ( target.getName ( ) );
 
-            Player target = (Player) event.getEntity();
-            IDBCPlayer dbcTarget = General.getDBCPlayer(target.getName());
+            target.addPotionEffect ( new PotionEffect ( PotionEffectType.SLOW, 20 * 5, 10 ) );
+            target.addPotionEffect ( new PotionEffect ( PotionEffectType.JUMP, 20 * 5, 128 ) );
 
-            target.addPotionEffect(new PotionEffect(PotionEffectType.SLOW, 20 * 5, 10)); // inmoviliza
-            target.addPotionEffect(new PotionEffect(PotionEffectType.JUMP, 20 * 5, 128)); // sin salto
+            spawnHologram ( target, isGuadana ?
+                    "§c☠ §6¡Tu energía ha sido drenada por la Guadaña del Ki!" :
+                    "§c☠ §6¡Has sido atravesado por la Espada de Espíritu Final!" );
+            attacker.getWorld ( ).playSound ( target.getLocation ( ), Sound.ENDERMAN_HIT, 1f, 0.5f );
 
-            spawnHologram(target, "§c☠ §6¡Has sido atravesado por la Espada de Espíritu Final!");
-            attacker.getWorld().playSound(target.getLocation(), Sound.ENDERMAN_HIT, 1f, 0.5f);
-
-            new BukkitRunnable () {
+            new BukkitRunnable ( ) {
                 int taskTime = 0;
 
                 @Override
-                public void run() {
+                public void run () {
                     if (taskTime >= 5) {
-                        this.cancel();
+                        this.cancel ( );
                         return;
                     }
-                    if (target.isOnline() && !target.isDead()) {
-                        int hp = dbcTarget.getHP();
-                        dbcTarget.setHP(hp - (int) (hp * 0.02));
-                        target.getWorld().playEffect(target.getLocation(), org.bukkit.Effect.STEP_SOUND, 152); // Partículas sangre
+                    if (target.isOnline ( ) && !target.isDead ( )) {
+                        int hp = dbcTarget.getHP ( );
+                        dbcTarget.setHP ( hp - (int) (hp * 0.01) ); // 1% cada segundo (total ~5%)
+                        target.getWorld ( ).playEffect ( target.getLocation ( ),
+                                org.bukkit.Effect.STEP_SOUND, 152 );
                     }
                     taskTime++;
                 }
-            }.runTaskTimer(Main.instance, 0L, 20L);
+            }.runTaskTimer ( Main.instance, 0L, 20L );
 
+            Bukkit.getScheduler ( ).runTaskLater ( Main.instance, () -> {
+                // Drenado total 5% extra en stats
+                dbcTarget.setHP ( (int) (dbcTarget.getHP ( ) * 0.95) );
+                dbcTarget.setKi ( (int) (dbcTarget.getKi ( ) * 0.95) );
+                dbcTarget.setStamina ( (int) (dbcTarget.getStamina ( ) * 0.95) );
+                target.getWorld ( ).createExplosion ( target.getLocation ( ), 0F, false );
+                spawnHologram ( target, "§e💥 ¡Energía absorbida!" );
+            }, 100 );
 
-            Bukkit.getScheduler().runTaskLater(Main.instance, () -> {
-                dbcTarget.setHP((int) (dbcTarget.getHP() - dbcTarget.getHP() * 0.18));
-                dbcTarget.setKi((int) (dbcTarget.getKi() * 0.6));
-                dbcTarget.setStamina((int) (dbcTarget.getStamina() * 0.88));
-                target.getWorld().createExplosion(target.getLocation(), 0F, false);
-                spawnHologram(target, "§e💥 ¡Explosión del Espíritu Final!");
-            }, 100);
-            registrarUso(attackerName, now, isImmune);
+            registrarUso ( attackerName, now, isImmune, isGuadana );
         }
     }
 
-    private void registrarUso(String playerName, long currentTime, boolean isImmune) {
+    private void registrarUso ( String playerName, long currentTime, boolean isImmune, boolean isGuadana ) {
         if (isImmune) return;
 
-        int usos = usosPrevios.getOrDefault(playerName, 0) + 1;
+        if (isGuadana) {
+            cooldowns.put ( playerName, currentTime ); // Cooldown directo de 5 min
+            return;
+        }
+
+        // Lógica de usos para espada
+        int usos = usosPrevios.getOrDefault ( playerName, 0 ) + 1;
         if (usos >= MAX_USOS_ANTES_COOLDOWN) {
-            cooldowns.put(playerName, currentTime);
-            usosPrevios.put(playerName, 0);
+            cooldowns.put ( playerName, currentTime );
+            usosPrevios.put ( playerName, 0 );
         } else {
-            usosPrevios.put(playerName, usos);
+            usosPrevios.put ( playerName, usos );
         }
     }
 }

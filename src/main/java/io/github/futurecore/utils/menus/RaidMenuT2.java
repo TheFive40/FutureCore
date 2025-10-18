@@ -27,9 +27,9 @@ import java.io.File;
 import java.io.IOException;
 import java.util.*;
 
-public class RaidMenu implements InventoryProvider, Listener {
+public class RaidMenuT2 implements InventoryProvider, Listener {
 
-    private static final String bossName = "Vegeta";
+    private static final String bossName = "Metal Cooler";
     private static final int maxJugadores = 1;
     private static final long COOLDOWN_MILLIS = 3 * 60 * 60 * 1000;
     @Getter
@@ -38,7 +38,6 @@ public class RaidMenu implements InventoryProvider, Listener {
     public static EstadoRaid estado = EstadoRaid.EN_ESPERA;
     @Getter
     public static ICustomNpc<?> currentBoss = null;
-    private static ICustomNpc<?> secundaryBoss = null;
     private static final Map<UUID, List<ICustomNpc<?>>> saibaimansPorJugador = new HashMap<> ( );
 
     public static void removeJugador ( UUID uuid ) {
@@ -52,7 +51,7 @@ public class RaidMenu implements InventoryProvider, Listener {
     public static void saveCooldowns( File file) {
         YamlConfiguration config = new YamlConfiguration ();
         for (Map.Entry<UUID, Long> entry : cooldowns.entrySet()) {
-            config.set("cooldownsT1." + entry.getKey().toString(), entry.getValue());
+            config.set("cooldownsT2." + entry.getKey().toString(), entry.getValue());
         }
         try {
             config.save(file);
@@ -64,11 +63,11 @@ public class RaidMenu implements InventoryProvider, Listener {
         if (!file.exists()) return;
         YamlConfiguration config = YamlConfiguration.loadConfiguration(file);
         cooldowns.clear();
-        if (config.contains("cooldownsT1")) {
-            for (String key : config.getConfigurationSection("cooldownsT1").getKeys(false)) {
+        if (config.contains("cooldownsT2")) {
+            for (String key : config.getConfigurationSection("cooldownsT2").getKeys(false)) {
                 try {
                     UUID uuid = UUID.fromString(key);
-                    long value = config.getLong("cooldownsT1." + key);
+                    long value = config.getLong("cooldownsT2." + key);
                     cooldowns.put(uuid, value);
                 } catch (IllegalArgumentException ex) {
                     System.out.println("UUID inválido: " + key);
@@ -78,7 +77,7 @@ public class RaidMenu implements InventoryProvider, Listener {
     }
     @Override
     public void init ( Player player, InventoryContents contents ) {
-        ItemStack raidItem = new ItemStack ( Material.getMaterial ( 6177 ) );
+        ItemStack raidItem = new ItemStack ( Material.getMaterial ( 6178 ) );
 
         ItemMeta meta = raidItem.getItemMeta ( );
         meta.setDisplayName ( ChatColor.GREEN + "Ingresar a la Raid" );
@@ -135,17 +134,16 @@ public class RaidMenu implements InventoryProvider, Listener {
                 return;
             }
             if (currentBoss != null) currentBoss.despawn ( );
-            if (secundaryBoss != null) secundaryBoss.despawn ( );
 
-            if (ticket.getTypeId ( ) == 6186 && ticket.getAmount ( ) >= 16 && jugadores.size ( ) < maxJugadores) {
+            if (ticket.getTypeId ( ) == 6186 && ticket.getAmount ( ) >= 32 && jugadores.size ( ) < maxJugadores) {
                 player.sendMessage ( ChatColor.GREEN + "Te has unido a la raid contra " + bossName );
-                Bukkit.dispatchCommand ( Bukkit.getConsoleSender ( ), "warp raidt1 " + player.getName ( ) );
-                ticket.setAmount ( ticket.getAmount ( ) - 16 );
+                Bukkit.dispatchCommand ( Bukkit.getConsoleSender ( ), "warp raidt2 " + player.getName ( ) );
+                ticket.setAmount ( ticket.getAmount ( ) - 32 );
                 player.setItemInHand ( ticket );
                 jugadores.add ( uuid );
                 cooldowns.put ( uuid, now );
             } else {
-                player.sendMessage ( CC.translate ( "&8[&6RAID&8] &7Necesitas tener &ax16 &7tickets para ingresar a la raid." ) );
+                player.sendMessage ( CC.translate ( "&8[&6RAID&8] &7Necesitas tener &ax32 &7tickets para ingresar a la raid." ) );
             }
             if (jugadores.size ( ) == maxJugadores) {
                 iniciarRaidConCuentaRegresiva ( player );
@@ -174,8 +172,8 @@ public class RaidMenu implements InventoryProvider, Listener {
 
     public static void open ( Player player ) {
         SmartInventory.builder ( )
-                .id ( "raid_menu" )
-                .provider ( new RaidMenu ( ) )
+                .id ( "raid_menuT2" )
+                .provider ( new RaidMenuT2 ( ) )
                 .size ( 3, 9 )
                 .title ( ChatColor.DARK_PURPLE + "Raid Boss" )
                 .build ( )
@@ -201,9 +199,6 @@ public class RaidMenu implements InventoryProvider, Listener {
                     if(currentBoss != null){
                         currentBoss.despawn ( );
                     }
-                    if(secundaryBoss != null){
-                        secundaryBoss.despawn ( );
-                    }
                     saibaimansPorJugador.forEach ( ( k, v ) -> {
                         for (ICustomNpc<?> e : v) {
                             if(e != null){
@@ -215,9 +210,9 @@ public class RaidMenu implements InventoryProvider, Listener {
                     return;
                 }
 
-                if (!vegetaTransformado && secundaryBoss != null && !secundaryBoss.isAlive ( ) && segundos >= 420) {
+                if (!vegetaTransformado && segundos <= 360) {
                     vegetaTransformado = true;
-                    sendMessageAllPlayers ( CC.translate ( "&d[RAID] ¡Vegeta ha perdido el control y se ha transformado en OZARU!" ) );
+                    sendMessageAllPlayers ( CC.translate ( "&d[RAID] ¡Metal Cooler ha perdido el control y ha desatado todo su poder!" ) );
                     if (currentBoss != null) {
                         currentBoss.despawn ( );
                     }
@@ -228,13 +223,13 @@ public class RaidMenu implements InventoryProvider, Listener {
                     currentBoss = (ICustomNpc<?>) dbcPlayer.getWorld ( ).spawnClone (
                             dbcPlayer.getPosition ( ).add ( 2.0, 0.0, 2.0 ),
                             5,
-                            "Vegeta Ozaru (RAID)"
+                            "Metal Cooler Gigant (RAID)"
                     );
 
                     currentBoss.getWorld ( ).thunderStrike ( currentBoss.getPosition ( ) );
                     currentBoss.setFaction ( 2 );
                     player.playSound ( player.getLocation ( ), Sound.ENDERDRAGON_DEATH, 1.0f, 1.0f );
-                    sendMessageAllPlayers ( "&8[&5RAID&8] &d¡El jefe secreto §5Vegeta Ozaru§d ha aparecido!");
+                    sendMessageAllPlayers ( "&8[&5RAID&8] &d¡El jefe secreto §fMetal Cooler§d ha aparecido!" );
                     player.playSound ( player.getLocation ( ), "jinryuudragonbc:DBC3.teleport", 1.0f, 0.8f );
                 }
 
@@ -252,16 +247,13 @@ public class RaidMenu implements InventoryProvider, Listener {
                     if(currentBoss != null){
                         currentBoss.despawn ( );
                     }
-                    if(secundaryBoss != null){
-                        secundaryBoss.despawn ( );
-                    }
                     saibaimansPorJugador.values ( ).forEach ( lista -> lista.forEach ( IEntity::despawn ) );
                     Bukkit.broadcastMessage ( ChatColor.DARK_RED + "[RAID] ¡El jefe ha ganado! El tiempo se ha agotado." );
                     return;
                 }
 
                 if (segundos % 60 == 0 || segundos <= 10) {
-                    Bukkit.broadcastMessage ( CC.translate ("&8[&4&lRAID T1&8] &cTiempo restante: " + (segundos / 60) + " min " + (segundos % 60) + " sec" ));
+                    Bukkit.broadcastMessage ( CC.translate ( "&8[&4&lRAID T2&8] &cTiempo restante: " + (segundos / 60) + " min " + (segundos % 60) + " sec" ) );
                 }
 
                 segundos--;
@@ -282,19 +274,16 @@ public class RaidMenu implements InventoryProvider, Listener {
         if(currentBoss != null){
             currentBoss.despawn ( );
         }
-        if(secundaryBoss != null){
-            secundaryBoss.despawn ( );
-        }
         saibaimansPorJugador.values ( ).forEach ( lista -> lista.forEach ( IEntity::despawn ) );
         for (UUID uuid : jugadores) {
-            Player p = Main.instance.getServer ().getPlayer ( uuid );
+            Player p = Bukkit.getPlayer ( uuid );
             if (p != null && p.isOnline ( )) {
                 p.sendMessage ( ChatColor.GREEN + "¡Felicidades! Has derrotado al jefe " + bossName );
-                Main.instance.getServer ().dispatchCommand ( Main.instance.getServer ().getConsoleSender ( ), "give " + p.getName ( ) + " 4461 64" );
-                Main.instance.getServer ().dispatchCommand ( Main.instance.getServer ().getConsoleSender ( ), "eco give " + p.getName ( ) + " 5000" );
-                Main.instance.getServer ().dispatchCommand ( Main.instance.getServer ().getConsoleSender ( ), "zenkais give 50 " + p.getName ( ) );
+                Main.instance.getServer ().dispatchCommand ( Main.instance.getServer ().getConsoleSender ( ), "give " + p.getName ( ) + " 4461 128" );
+                Main.instance.getServer ().dispatchCommand ( Main.instance.getServer ().getConsoleSender ( ), "eco give " + p.getName ( ) + " 15000" );
+                Main.instance.getServer ().dispatchCommand ( Main.instance.getServer ().getConsoleSender ( ), "zenkais give 100 " + p.getName ( ) );
                 Main.instance.getServer ().dispatchCommand ( Main.instance.getServer ().getConsoleSender ( ), "dartps " + p.getName ( ) + " " +
-                        General.getLVL ( p ) * 1000 );
+                        General.getLVL ( p ) * 1200 );
                 Main.instance.getServer ().dispatchCommand ( Main.instance.getServer ().getConsoleSender ( ), "warp spawn " + p.getName ( ) );
             }
         }
@@ -320,26 +309,24 @@ public class RaidMenu implements InventoryProvider, Listener {
     public static void startOleadasDeSaibaimans () {
         new BukkitRunnable ( ) {
             int oleada = 1;
-            final int maxOleadas = 10;
+            final int maxOleadas = 20;
 
             @Override
             public void run () {
                 if (jugadores.isEmpty ( )) {
                     cancel ( );
-                    if (currentBoss != null && secundaryBoss != null) {
+                    if (currentBoss != null) {
                         currentBoss.despawn ( );
-                        secundaryBoss.despawn ( );
                     }
                     saibaimansPorJugador.values ( ).forEach ( lista -> lista.forEach ( IEntity::despawn ) );
                 }
                 if (oleada > maxOleadas) {
                     cancel ( );
-                    secundaryBoss.setFaction ( 2 );
                     saibaimansPorJugador.values ( ).forEach ( lista -> lista.forEach ( IEntity::despawn ) );
                     saibaimansPorJugador.clear ( );
                     jugadores.forEach ( e -> {
                         Player player = Bukkit.getPlayer ( e );
-                        player.sendMessage ( "§8[§6RAID§8] §7Las oleadas de §aSaibaimans§7 han terminado." );
+                        player.sendMessage ( "§8[§6RAID§8] §7Las oleadas de §aMetal Cooler§7 han terminado." );
                     } );
                     for (UUID uuid : jugadores) {
                         Player player = Bukkit.getPlayer ( uuid );
@@ -347,6 +334,7 @@ public class RaidMenu implements InventoryProvider, Listener {
                             player.playSound ( player.getLocation ( ), Sound.WITHER_SPAWN, 1.0f, 1.0f );
                         }
                     }
+                    currentBoss.setFaction ( 2 );
                     return;
                 }
 
@@ -358,9 +346,8 @@ public class RaidMenu implements InventoryProvider, Listener {
                         boolean todosMuertos = actuales.isEmpty ( ) || actuales.stream ( ).allMatch ( npc -> !npc.isAlive ( ) );
 
                         if (todosMuertos || oleada == 1) {
-
                             IDBCPlayer dbcPlayer = General.getDBCPlayer ( p.getName ( ) );
-                            if (!RegionUtils.isLocationInRegion ( p.getLocation ( ), "raidt1" )) {
+                            if (!RegionUtils.isLocationInRegion ( p.getLocation ( ), "raidt2" )) {
                                 removeJugador ( uuid );
                                 continue;
                             }
@@ -374,7 +361,7 @@ public class RaidMenu implements InventoryProvider, Listener {
                                     dbcPlayer.getPosition ( ).add ( -2, 1, 2 ),
                                     dbcPlayer.getPosition ( ).add ( 2, 1, -2 )
                             )) {
-                                ICustomNpc<?> saibaiman = (ICustomNpc<?>) dbcPlayer.getWorld ( ).spawnClone ( offset, 5, "Saibaiman" );
+                                ICustomNpc<?> saibaiman = (ICustomNpc<?>) dbcPlayer.getWorld ( ).spawnClone ( offset, 5, "Metal Cooler" );
                                 nuevos.add ( saibaiman );
                                 p.playSound ( p.getLocation ( ), "jinryuudragonbc:DBC3.teleport", 1.0f, 1.0f );
                             }
@@ -417,15 +404,15 @@ public class RaidMenu implements InventoryProvider, Listener {
                                 s.setMeleeStrength ( s.getMeleeStrength ( ) * porcentajeFuerza );
                                 s.setCombatRegen ( (float) (s.getCombatRegen ( ) * porcentajeRegen) );
                             }
+
                             saibaimansPorJugador.put ( uuid, nuevos );
                             oleada++;
-
                         }
                     }
                 }
 
             }
-        }.runTaskTimer ( Main.instance, 0L, 20L * 5 ); // cada 5 segundos
+        }.runTaskTimer ( Main.instance, 0L, 20L * 5 );
 
         new BukkitRunnable ( ) {
             @Override
@@ -435,21 +422,7 @@ public class RaidMenu implements InventoryProvider, Listener {
                     if(currentBoss != null){
                         currentBoss.despawn ( );
                     }
-                    if(secundaryBoss != null){
-                        secundaryBoss.despawn ( );
-
-                    }
                     saibaimansPorJugador.values ( ).forEach ( lista -> lista.forEach ( IEntity::despawn ) );
-                }
-                if (secundaryBoss == null || !secundaryBoss.isAlive ( )) {
-                    for (UUID uuid : jugadores) {
-                        Player player = Bukkit.getPlayer ( uuid );
-                        if (player != null) {
-                            player.playSound ( player.getLocation ( ), Sound.ENDERDRAGON_GROWL, 1.0f, 1.0f );
-                        }
-                    }
-                    if (currentBoss != null) currentBoss.setFaction ( 2 );
-                    cancel ( );
                 }
             }
         }.runTaskTimer ( Main.instance, 0L, 1L );
@@ -469,7 +442,7 @@ public class RaidMenu implements InventoryProvider, Listener {
 
                     cancel ( );
                     jugador.sendMessage ( "§8[§6RAID§8] §a¡La raid ha comenzado!" );
-                    jugador.sendMessage ( "§8[§6RAID§8] §e¡Vegeta y Nappa han llegado al campo de batalla!" );
+                    jugador.sendMessage ( "§8[§6RAID§8] §e¡Metal Cooler ha llegado al campo de batalla!" );
 
                     estado = EstadoRaid.INICIADA;
                     startRaidTimer ( );
@@ -477,15 +450,11 @@ public class RaidMenu implements InventoryProvider, Listener {
                     UUID uuidpl = jugadores.iterator ( ).next ( );
                     IDBCPlayer player1 = NpcAPI.Instance ( ).getPlayer ( Main.instance.getServer ( ).getPlayer ( uuidpl ).getName ( ) ).getDBCPlayer ( );
 
-                    currentBoss = (ICustomNpc<?>) player1.getWorld ( ).spawnClone ( player1.getPosition ( ).add ( 1.0, 0.0, 1.0 ), 5, "Vegeta (RAID)" );
-                    secundaryBoss = (ICustomNpc<?>) player1.getWorld ( ).spawnClone ( player1.getPosition ( ).add ( 3.0, 0, 3.0 ), 5, "Nappa (RAID)" );
+                    currentBoss = (ICustomNpc<?>) player1.getWorld ( ).spawnClone ( player1.getPosition ( ).add ( 1.0, 0.0, 1.0 ), 5, "Metal Cooler Final (RAID)" );
 
                     currentBoss.getWorld ( ).thunderStrike ( currentBoss.getPosition ( ) );
-                    secundaryBoss.getWorld ( ).thunderStrike ( secundaryBoss.getPosition ( ) );
                     currentBoss.setFaction ( 0 );
-                    secundaryBoss.setFaction ( 0 );
 
-                    // Reproducir sonido al jugador cuando aparecen Vegeta y Nappa
                     jugador.playSound ( jugador.getLocation ( ), "jinryuudragonbc:DBC3.teleport", 1.0f, 1.0f );
 
                     new BukkitRunnable ( ) {
@@ -494,13 +463,14 @@ public class RaidMenu implements InventoryProvider, Listener {
                         @Override
                         public void run () {
                             if (tiempoSpawn > 0) {
-                                jugador.sendMessage ( "§8[§6RAID§8] §7Los §aSaibaimans§7 aparecerán en §c" + tiempoSpawn + "§7 segundos..." );
+                                jugador.sendMessage ( "§8[§6RAID§8] §7Los §aMetal Coolers§7 aparecerán en §c" + tiempoSpawn + "§7 segundos..." );
                                 tiempoSpawn--;
                             } else {
                                 cancel ( );
-                                jugador.sendMessage ( "§8[§6RAID§8] §a¡Los Saibaimans han aparecido!" );
+                                jugador.sendMessage ( "§8[§6RAID§8] §a¡Los Metal Coolers han aparecido!" );
                                 jugador.sendMessage ( "§8[§6RAID§8] §e¡Prepárate para luchar!" );
 
+                                // Reproducir sonido al jugador cuando aparecen los Saibaimans
                                 jugador.playSound ( jugador.getLocation ( ), "jinryuudragonbc:DBC3.teleport", 1.0f, 1.0f );
 
                                 startOleadasDeSaibaimans ( );

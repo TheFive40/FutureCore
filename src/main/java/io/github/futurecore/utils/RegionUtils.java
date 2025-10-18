@@ -44,6 +44,27 @@ public class RegionUtils {
         return regionAccess.containsKey ( regionName ) && regionAccess.get ( regionName ).contains ( playerName );
     }
 
+    /**
+     * Devuelve el nombre de la primera región que contiene la ubicación dada.
+     *
+     * @param location La ubicación a verificar.
+     * @return El nombre de la región o null si no se encuentra ninguna.
+     */
+    public static String getRegionNameAtLocation(Location location) {
+        WorldGuardPlugin wgPlugin = getWorldGuard();
+        if (wgPlugin == null || location == null) return null;
+
+        RegionContainer container = wgPlugin.getRegionContainer();
+        RegionManager regionManager = container.get(location.getWorld());
+        if (regionManager == null) return null;
+
+        ApplicableRegionSet regionSet = regionManager.getApplicableRegions(location);
+        for (ProtectedRegion region : regionSet) {
+            return region.getId();
+        }
+
+        return null;
+    }
 
     public static ProtectedRegion findRegionInAnyWorld ( String regionName ) {
         WorldGuardPlugin wg = WorldGuardPlugin.inst ( );

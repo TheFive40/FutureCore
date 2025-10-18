@@ -10,6 +10,7 @@ import io.github.futurecore.Main;
 import io.github.futurecore.utils.CC;
 import io.github.futurecore.utils.ItemSerializationUtil;
 import io.github.futurecore.utils.data.KairosData.PKairos;
+import io.github.futurecore.utils.data.KairosDataHandler.KairosDataHandler;
 import io.github.futurecore.utils.handlers.kairos.builder.ItemBuilder;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
@@ -24,6 +25,8 @@ import java.io.File;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class KairosShopMenu implements InventoryProvider {
 
@@ -79,7 +82,11 @@ public class KairosShopMenu implements InventoryProvider {
                                     NbtHandler nbtHandler = new NbtHandler ( cloned );
                                     nbtHandler.setInteger ( "usages", usages );
                                     nbtHandler.setInteger ( "maxUses", maxUses );
-                                    nbtHandler.setString ( "CUSTOMID", "kairosITEM" );
+                                    if (KairosDataHandler.getCustomId ( (ArrayList<String>) meta.getLore ( ) ) == null) {
+                                        nbtHandler.setString ( "CUSTOMID", "kairosITEM" );
+                                    } else {
+                                        nbtHandler.setString ( "CUSTOMID", KairosDataHandler.getCustomId ( (ArrayList<String>) meta.getLore ( ) ) );
+                                    }
                                     cloned = nbtHandler.getItemStack ( );
                                     break;
                                 }
