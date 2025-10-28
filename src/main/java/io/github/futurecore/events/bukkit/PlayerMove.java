@@ -20,46 +20,45 @@ import static io.github.futurecore.events.customitems.JacksScytheSwordEvent.froo
 public class PlayerMove implements Listener {
 
 
-    @EventHandler
-    public void onBlockBreak ( org.bukkit.event.block.BlockBreakEvent event ) {
-        Player player = event.getPlayer ( );
-        Block block = event.getBlock ( );
-      String regionName = RegionUtils.getRegionNameAtLocation(player.getLocation());
-      if (regionName != null && regionName.equalsIgnoreCase("TrainingHalloween")) {
-        IDBCPlayer idbcPlayer = General.getDBCPlayer(player.getName());
-        if (!idbcPlayer.hasFinishedQuest(860)) {
-          player.sendMessage(CC.translate("&c¡Debes completar la misión de reunir todas las calabazas!"));
-          event.setCancelled(true);
+  @EventHandler
+  public void onBlockBreak ( org.bukkit.event.block.BlockBreakEvent event ) {
+    Player player = event.getPlayer ( );
+    Block block = event.getBlock ( );
+    if (block.getType ( ) == Material.ICE) {
+      for (Location loc : bloquesTemporales) {
+        if (loc.getBlockX ( ) == block.getX ( ) &&
+          loc.getBlockY ( ) == block.getY ( ) &&
+          loc.getBlockZ ( ) == block.getZ ( ) &&
+          loc.getWorld ( ).equals ( block.getWorld ( ) )) {
+          event.setCancelled ( true );
+          player.sendMessage ( "§cNo puedes romper este hielo mágico." );
+          return;
         }
       }
 
-      if (block.getType ( ) == Material.ICE) {
-            for (Location loc : bloquesTemporales) {
-                if (loc.getBlockX ( ) == block.getX ( ) &&
-                        loc.getBlockY ( ) == block.getY ( ) &&
-                        loc.getBlockZ ( ) == block.getZ ( ) &&
-                        loc.getWorld ( ).equals ( block.getWorld ( ) )) {
-                    event.setCancelled ( true );
-                    player.sendMessage ( "§cNo puedes romper este hielo mágico." );
-                    return;
-                }
-            }
-
-        }
     }
+  }
 
-    @EventHandler
-    public void onPlayerMoveEvent ( PlayerMoveEvent event ) {
-        Player player = event.getPlayer ( );
-        if (RegionUtils.isLocationInRegion ( player.getLocation ( ), "sumo" )) {
-            IDBCPlayer idbcPlayer = General.getDBCPlayer ( player.getName ( ) );
-            idbcPlayer.setKi ( 0 );
-            return;
-        }
-        if (froozePlayer.containsKey ( player.getUniqueId ( ) )) {
-            Location location = froozePlayer.get ( player.getUniqueId ( ) );
-            player.teleport ( location );
-            event.setCancelled ( true );
-        }
+  @EventHandler
+  public void onPlayerMoveEvent ( PlayerMoveEvent event ) {
+    Player player = event.getPlayer ( );
+    String regionName = RegionUtils.getRegionNameAtLocation ( player.getLocation ( ) );
+    if (regionName != null && regionName.equalsIgnoreCase ( "f_halloween" )) {
+      IDBCPlayer idbcPlayer = General.getDBCPlayer ( player.getName ( ) );
+      if (!idbcPlayer.hasFinishedQuest ( 860 )) {
+        player.sendMessage ( CC.translate ( "&c¡Debes completar la misión a desbloquear el Training Halloween" ) );
+        event.setCancelled ( true );
+      }
     }
+    if (RegionUtils.isLocationInRegion ( player.getLocation ( ), "sumo" )) {
+      IDBCPlayer idbcPlayer = General.getDBCPlayer ( player.getName ( ) );
+      idbcPlayer.setKi ( 0 );
+      return;
+    }
+    if (froozePlayer.containsKey ( player.getUniqueId ( ) )) {
+      Location location = froozePlayer.get ( player.getUniqueId ( ) );
+      player.teleport ( location );
+      event.setCancelled ( true );
+    }
+  }
 }
